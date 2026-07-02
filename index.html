@@ -42,8 +42,6 @@
   <!-- Lớp hình nền: giới hạn theo cột mobile (không phủ full màn hình) -->
   <div id="bgLayer" class="pointer-events-none fixed inset-y-0 left-1/2 -z-10 w-full max-w-lg -translate-x-1/2 bg-cover bg-center bg-no-repeat"></div>
 
-  <div class="mx-auto flex min-h-screen max-w-lg flex-col px-4 py-6 sm:py-10">
-
   <div class="mx-auto flex min-h-screen max-w-lg flex-col px-4 py-3 sm:py-5">
 
     <!-- Header gọn: logo trái + tiêu đề, nút quản lý phải -->
@@ -329,10 +327,17 @@
     const form = $('requestForm'), nameSel = $('name'), arrivalWrap = $('arrivalWrap'),
           arrivalTime = $('arrivalTime'), lateHint = $('lateHint'), submitBtn = $('submitBtn');
 
+    // Giờ hiện tại dạng 24h "HH:mm" theo giờ máy người dùng
+    function nowHHMM() {
+      const d = new Date();
+      return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    }
+
     (function initDate() {
       const iso = new Date().toISOString().slice(0, 10);
       $('date').value = iso;
       $('date').min = iso;
+      arrivalTime.value = nowHHMM(); // mặc định = giờ hiện tại (VD 15:00)
     })();
 
     function currentType() {
@@ -417,7 +422,7 @@
           showToast(data.message || 'Đã gửi yêu cầu!', true);
           form.reset();
           document.querySelector('input[name="type"][value="Đi trễ"]').checked = true;
-          arrivalTime.value = '19:00';
+          arrivalTime.value = nowHHMM();
           $('date').value = new Date().toISOString().slice(0, 10);
           syncTypeUI();
           $('statsBody').dataset.loaded = ''; // buộc thống kê tải lại
