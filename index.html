@@ -36,24 +36,29 @@
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbw5llvK_JrR4sjG1cZtB9aSUmUI-X9LSib4KUvOKgCLJaZwCexHGxlAc4v_I8AVV_zy8g/exec";
     const PRACTICE_TIME = "18:30"; // giờ tập chuẩn — client hiển thị
+    const LOGO_URL = "lts-logo.jpg"; // logo team; để trống -> hiện chữ "LTS"
   </script>
 
-  <div class="mx-auto flex min-h-screen max-w-lg flex-col px-4 py-6 sm:py-10">
+  <!-- Lớp hình nền: giới hạn theo cột mobile (không phủ full màn hình) -->
+  <div id="bgLayer" class="pointer-events-none fixed inset-y-0 left-1/2 -z-10 w-full max-w-lg -translate-x-1/2 bg-cover bg-center bg-no-repeat"></div>
 
-    <!-- Header -->
-    <header class="relative mb-5 text-center">
-      <!-- Nút vào khu quản lý (góc trên phải) -->
-      <button id="adminGear" title="Khu quản lý"
-        class="absolute right-0 top-0 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-lg shadow ring-1 ring-slate-200 transition hover:bg-brand-50 hover:ring-brand-300">🔒</button>
-      <div class="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-700 shadow-lg shadow-brand-700/30">
-        <span class="text-2xl font-extrabold tracking-tight text-white">LTS</span>
+  <div class="mx-auto flex min-h-screen max-w-lg flex-col px-4 py-3 sm:py-5">
+
+    <!-- Header gọn: logo trái + tiêu đề, nút quản lý phải -->
+    <header class="mb-3 flex items-center gap-3">
+      <div id="logoBadge" class="flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-slate-200">
+        <span class="text-lg font-extrabold tracking-tight text-brand-700">LTS</span>
       </div>
-      <h1 class="text-2xl font-bold text-slate-900">Quản lý đi trễ / nghỉ</h1>
-      <p class="mt-1 text-sm text-slate-500">Buổi tập lúc <span class="font-semibold text-brand-700">18:30</span> mỗi ngày</p>
+      <div class="min-w-0 flex-1">
+        <h1 class="truncate text-lg font-bold leading-tight text-slate-900">Đăng ký đi trễ / nghỉ</h1>
+        <p class="text-xs text-slate-500">Buổi tập lúc <span class="font-semibold text-brand-700">18:30</span></p>
+      </div>
+      <button id="adminGear" title="Khu quản lý"
+        class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/80 text-base shadow ring-1 ring-slate-200 transition hover:bg-brand-50 hover:ring-brand-300">🔒</button>
     </header>
 
     <!-- Tabs -->
-    <nav id="tabNav" class="mb-5 grid grid-cols-1 gap-1 rounded-2xl bg-white/70 p-1 shadow-sm ring-1 ring-slate-200">
+    <nav id="tabNav" class="mb-3 grid grid-cols-1 gap-1 rounded-2xl bg-white/70 p-1 shadow-sm ring-1 ring-slate-200">
       <button data-tab="form" class="tab-btn rounded-xl px-3 py-2.5 text-sm font-semibold transition">📝 Gửi</button>
       <button data-tab="approve" class="tab-btn hidden rounded-xl px-3 py-2.5 text-sm font-semibold transition">✅ Duyệt</button>
       <button data-tab="stats" class="tab-btn hidden rounded-xl px-3 py-2.5 text-sm font-semibold transition">📊 Thống kê</button>
@@ -64,52 +69,52 @@
 
       <!-- ========== TAB: FORM ========== -->
       <section id="panel-form" class="tab-panel active">
-        <div class="rounded-3xl border border-slate-200/70 bg-white/90 p-6 shadow-xl shadow-slate-200/60 backdrop-blur sm:p-8">
-          <form id="requestForm" class="space-y-5" novalidate>
+        <div class="rounded-2xl border border-slate-200/70 bg-white/90 p-4 shadow-xl shadow-slate-200/60 backdrop-blur">
+          <form id="requestForm" class="space-y-2.5" novalidate>
             <div>
-              <label for="name" class="mb-1.5 block text-sm font-semibold text-slate-700">Thành viên <span class="text-red-500">*</span></label>
+              <label for="name" class="mb-1 block text-xs font-semibold text-slate-700">Thành viên <span class="text-red-500">*</span></label>
               <select id="name" required
-                class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100">
+                class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100">
                 <option value="">Đang tải danh sách…</option>
               </select>
             </div>
 
             <div>
-              <span class="mb-1.5 block text-sm font-semibold text-slate-700">Loại yêu cầu <span class="text-red-500">*</span></span>
-              <div class="grid grid-cols-2 gap-3">
+              <span class="mb-1 block text-xs font-semibold text-slate-700">Loại yêu cầu <span class="text-red-500">*</span></span>
+              <div class="grid grid-cols-2 gap-2">
                 <label class="cursor-pointer">
                   <input type="radio" name="type" value="Đi trễ" class="peer sr-only" checked />
-                  <div class="flex items-center justify-center gap-2 rounded-xl border-2 border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 transition peer-checked:border-brand-600 peer-checked:bg-brand-50 peer-checked:text-brand-700">⏰ Đi trễ</div>
+                  <div class="flex items-center justify-center gap-1.5 rounded-xl border-2 border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition peer-checked:border-brand-600 peer-checked:bg-brand-50 peer-checked:text-brand-700">⏰ Đi trễ</div>
                 </label>
                 <label class="cursor-pointer">
                   <input type="radio" name="type" value="Nghỉ" class="peer sr-only" />
-                  <div class="flex items-center justify-center gap-2 rounded-xl border-2 border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 transition peer-checked:border-brand-600 peer-checked:bg-brand-50 peer-checked:text-brand-700">🚫 Nghỉ</div>
+                  <div class="flex items-center justify-center gap-1.5 rounded-xl border-2 border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition peer-checked:border-brand-600 peer-checked:bg-brand-50 peer-checked:text-brand-700">🚫 Nghỉ</div>
                 </label>
               </div>
             </div>
 
-            <div>
-              <label for="date" class="mb-1.5 block text-sm font-semibold text-slate-700">Ngày áp dụng <span class="text-red-500">*</span></label>
-              <input type="date" id="date" required
-                class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100" />
-              <p id="dateDisplay" class="mt-1.5 text-xs text-slate-500"></p>
+            <div class="grid grid-cols-2 gap-2">
+              <div id="dateWrap">
+                <label for="date" class="mb-1 block text-xs font-semibold text-slate-700">Ngày <span class="text-red-500">*</span></label>
+                <input type="date" id="date" required
+                  class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100" />
+              </div>
+              <div id="arrivalWrap">
+                <label for="arrivalTime" class="mb-1 block text-xs font-semibold text-slate-700">Giờ đến <span class="text-red-500">*</span></label>
+                <input type="time" id="arrivalTime" value="19:00"
+                  class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100" />
+              </div>
             </div>
-
-            <div id="arrivalWrap">
-              <label for="arrivalTime" class="mb-1.5 block text-sm font-semibold text-slate-700">Giờ đến dự kiến <span class="text-red-500">*</span></label>
-              <input type="time" id="arrivalTime" value="19:00"
-                class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100" />
-              <p id="lateHint" class="mt-1.5 text-xs text-slate-500"></p>
-            </div>
+            <p id="lateHint" class="text-xs text-slate-500"></p>
 
             <div>
-              <label for="reason" class="mb-1.5 block text-sm font-semibold text-slate-700">Lý do <span class="text-red-500">*</span></label>
-              <textarea id="reason" rows="3" required placeholder="VD: Kẹt xe / có việc gia đình…"
-                class="w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100"></textarea>
+              <label for="reason" class="mb-1 block text-xs font-semibold text-slate-700">Lý do <span class="text-red-500">*</span></label>
+              <textarea id="reason" rows="2" required placeholder="VD: Kẹt xe / có việc gia đình…"
+                class="w-full resize-none rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100"></textarea>
             </div>
 
             <button type="submit" id="submitBtn"
-              class="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-700 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-brand-700/30 transition hover:bg-brand-800 active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-70">
+              class="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-brand-700/30 transition hover:bg-brand-800 active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-70">
               <svg id="spinner" class="hidden h-5 w-5 animate-spin text-white" viewBox="0 0 24 24" fill="none">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z"></path>
@@ -123,15 +128,11 @@
       <!-- ========== TAB: APPROVE ========== -->
       <section id="panel-approve" class="tab-panel">
         <div class="rounded-3xl border border-slate-200/70 bg-white/90 p-5 shadow-xl shadow-slate-200/60 backdrop-blur sm:p-6">
-          <div class="mb-4 flex items-center gap-2">
-            <select id="approveFilter" class="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100">
-              <option value="Chờ duyệt">⏳ Chờ duyệt</option>
-              <option value="Đã duyệt">✅ Đã duyệt</option>
-              <option value="Từ chối">❌ Từ chối</option>
-              <option value="all">📋 Tất cả</option>
-            </select>
-            <button id="approveReload" class="rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-800">Tải</button>
+          <div class="mb-4 flex items-center justify-between gap-2">
+            <h3 class="text-sm font-bold text-slate-800">⏳ Yêu cầu chờ duyệt</h3>
+            <button id="approveReload" class="rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-800">↻ Tải lại</button>
           </div>
+          <p class="mb-3 text-xs text-slate-500">Duyệt → thêm vào bảng thống kê. Từ chối → xoá, không lưu.</p>
           <div id="approveBody" class="space-y-3 text-sm text-slate-500">Đang tải…</div>
         </div>
       </section>
@@ -179,10 +180,10 @@
 
     </main>
 
-    <footer class="mt-6 text-center text-xs text-slate-400">
-      <p>Team LTS · Dữ liệu lưu về Google Sheet</p>
-      <button id="managerBtn" class="mt-2 font-semibold text-slate-400 underline decoration-dotted transition hover:text-brand-600">🔒 Khu quản lý</button>
-      <button id="logoutBtn" class="mt-2 hidden font-semibold text-red-400 underline decoration-dotted transition hover:text-red-600">🚪 Thoát quản lý</button>
+    <footer class="mt-3 text-center text-xs text-slate-400">
+      <p>Team LTS · lưu về Google Sheet</p>
+      <button id="managerBtn" class="mt-1 hidden font-semibold text-slate-400 underline decoration-dotted transition hover:text-brand-600">🔒 Khu quản lý</button>
+      <button id="logoutBtn" class="mt-1 hidden font-semibold text-red-400 underline decoration-dotted transition hover:text-red-600">🚪 Thoát quản lý</button>
     </footer>
   </div>
 
@@ -239,7 +240,6 @@
       document.querySelectorAll('.tab-btn[data-tab="approve"], .tab-btn[data-tab="stats"], .tab-btn[data-tab="history"]').forEach((b) => b.classList.add('hidden'));
       $('tabNav').classList.add('grid-cols-1');
       $('tabNav').classList.remove('grid-cols-2', 'sm:grid-cols-4');
-      $('managerBtn').classList.remove('hidden');
       $('adminGear').textContent = '🔒';
       $('adminGear').title = 'Khu quản lý';
       $('logoutBtn').classList.add('hidden');
@@ -255,8 +255,10 @@
       $('pinModal').classList.add('flex');
       setTimeout(() => $('pinInput').focus(), 50);
     }
-    $('managerBtn').addEventListener('click', openPinModal);
-    $('adminGear').addEventListener('click', openPinModal);
+    function doLogout() { lockManager(); showToast('Đã thoát quản lý.', true); }
+    // Đã đăng nhập -> gear = thoát; chưa -> mở ô PIN
+    $('managerBtn').addEventListener('click', () => { if (isManager()) doLogout(); else openPinModal(); });
+    $('adminGear').addEventListener('click', () => { if (isManager()) doLogout(); else openPinModal(); });
     $('pinCancel').addEventListener('click', closePinModal);
     function closePinModal() {
       $('pinModal').classList.add('hidden');
@@ -289,7 +291,7 @@
         $('pinSubmit').textContent = 'Vào';
       }
     });
-    $('logoutBtn').addEventListener('click', () => { lockManager(); showToast('Đã thoát quản lý.', true); });
+    $('logoutBtn').addEventListener('click', doLogout);
 
     /* ---------- Tabs ---------- */
     const tabBtns = document.querySelectorAll('.tab-btn');
@@ -329,22 +331,17 @@
       const iso = new Date().toISOString().slice(0, 10);
       $('date').value = iso;
       $('date').min = iso;
-      updateDateDisplay();
     })();
-    function updateDateDisplay() {
-      const v = $('date').value; // yyyy-mm-dd
-      if (!v) { $('dateDisplay').textContent = ''; return; }
-      const [y, m, d] = v.split('-');
-      $('dateDisplay').textContent = '📅 ' + d + '/' + m + '/' + y;
-    }
-    $('date').addEventListener('change', updateDateDisplay);
 
     function currentType() {
       const el = document.querySelector('input[name="type"]:checked');
       return el ? el.value : 'Đi trễ';
     }
     function syncTypeUI() {
-      arrivalWrap.classList.toggle('hidden', currentType() !== 'Đi trễ');
+      const isLate = currentType() === 'Đi trễ';
+      arrivalWrap.classList.toggle('hidden', !isLate);
+      // Nghỉ -> ô Ngày chiếm full chiều ngang cho gọn
+      $('dateWrap').classList.toggle('col-span-2', !isLate);
       updateLateHint();
     }
     document.querySelectorAll('input[name="type"]').forEach((r) => r.addEventListener('change', syncTypeUI));
@@ -516,14 +513,12 @@
 
     /* ---------- Duyệt ---------- */
     $('approveReload').addEventListener('click', loadPending);
-    $('approveFilter').addEventListener('change', loadPending);
 
     async function loadPending() {
       const body = $('approveBody');
-      const filter = $('approveFilter').value;
       body.innerHTML = spinnerHTML('Đang tải…');
       try {
-        const res = await fetch(API_URL + '?action=pending&filter=' + encodeURIComponent(filter) + '&pin=' + encodeURIComponent(getPin()));
+        const res = await fetch(API_URL + '?action=pending&pin=' + encodeURIComponent(getPin()));
         const data = await res.json();
         if (data.status !== 'success') {
           if (/PIN/i.test(data.message || '')) { lockManager(); showToast('Phiên hết hạn, đăng nhập lại.', false); return; }
@@ -537,58 +532,52 @@
 
     function renderPending(items) {
       const body = $('approveBody');
-      if (!items.length) { body.innerHTML = '<p class="rounded-xl bg-slate-50 py-6 text-center text-slate-400">Không có yêu cầu nào.</p>'; return; }
+      if (!items.length) { body.innerHTML = '<p class="rounded-xl bg-slate-50 py-6 text-center text-slate-400">🎉 Không còn yêu cầu chờ duyệt.</p>'; return; }
       body.innerHTML = items.map((it) => {
         const typeBadge = it.type === 'Đi trễ'
           ? '<span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">⏰ Đi trễ</span>'
           : '<span class="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700">🚫 Nghỉ</span>';
         const lateInfo = it.type === 'Đi trễ' && it.arrival
           ? '<span class="text-slate-500">· đến ' + esc(it.arrival) + ' (trễ ' + it.lateMinutes + 'p)</span>' : '';
-        const actions =
-          '<div class="mt-2 flex gap-2">' +
-            '<button data-row="' + it.row + '" data-status="Đã duyệt" class="approve-act flex-1 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-green-700">✅ Duyệt</button>' +
-            '<button data-row="' + it.row + '" data-status="Từ chối" class="approve-act flex-1 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700">❌ Từ chối</button>' +
-            (it.status !== 'Chờ duyệt'
-              ? '<button data-row="' + it.row + '" data-status="Chờ duyệt" class="approve-act rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50">↩︎ Chờ</button>'
-              : '') +
-          '</div>';
         return '<div class="rounded-xl border border-slate-200 bg-white p-3">' +
-          '<div class="mb-1 flex items-center justify-between gap-2">' +
-            '<div class="flex items-center gap-2">' + typeBadge + '<span class="font-bold text-slate-800">' + esc(it.name) + '</span></div>' +
-            badgeStatus(it.status) +
-          '</div>' +
+          '<div class="mb-1 flex items-center gap-2">' + typeBadge + '<span class="font-bold text-slate-800">' + esc(it.name) + '</span></div>' +
           '<div class="text-xs text-slate-600"><span class="font-semibold text-slate-700">' + esc(it.date) + '</span> · ' + esc(it.reason) + ' ' + lateInfo + '</div>' +
           '<div class="mt-1 text-[11px] text-slate-400">Gửi: ' + esc(it.timestamp) + '</div>' +
-          actions +
+          '<div class="mt-2 flex gap-2">' +
+            '<button data-sheet="' + esc(it.sheet) + '" data-row="' + it.row + '" data-act="approve" class="approve-act flex-1 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-green-700">✅ Duyệt</button>' +
+            '<button data-sheet="' + esc(it.sheet) + '" data-row="' + it.row + '" data-act="reject" class="approve-act flex-1 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700">❌ Từ chối</button>' +
+          '</div>' +
         '</div>';
       }).join('');
 
       body.querySelectorAll('.approve-act').forEach((btn) => {
-        btn.addEventListener('click', () => updateStatus(btn.dataset.row, btn.dataset.status, btn));
+        btn.addEventListener('click', () => decide(btn.dataset.sheet, btn.dataset.row, btn.dataset.act, btn));
       });
     }
 
-    async function updateStatus(row, status, btn) {
-      const original = btn.textContent;
-      btn.disabled = true; btn.textContent = '…';
+    async function decide(sheet, row, act, btn) {
+      // khoá cả 2 nút trong card
+      const card = btn.closest('.flex').parentElement;
+      card.querySelectorAll('.approve-act').forEach((b) => (b.disabled = true));
+      btn.textContent = '…';
       try {
         const res = await fetch(API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'updateStatus', pin: getPin(), row: row, status: status }),
+          body: JSON.stringify({ action: act, pin: getPin(), sheet: sheet, row: row }),
         });
         const data = await res.json();
         if (data.status === 'success') {
-          showToast(data.message || 'Đã cập nhật.', true);
-          $('statsBody').dataset.loaded = ''; // thống kê cần tải lại
+          showToast(data.message || 'Đã xử lý.', true);
+          $('statsBody').dataset.loaded = ''; // thống kê tải lại
           loadPending();
         } else {
           if (/PIN/i.test(data.message || '')) { lockManager(); showToast('Phiên hết hạn, đăng nhập lại.', false); }
-          else { showToast(data.message || 'Cập nhật thất bại.', false); btn.disabled = false; btn.textContent = original; }
+          else { showToast(data.message || 'Thất bại.', false); loadPending(); }
         }
       } catch (e) {
         showToast('Lỗi kết nối.', false);
-        btn.disabled = false; btn.textContent = original;
+        card.querySelectorAll('.approve-act').forEach((b) => (b.disabled = false));
       }
     }
 
@@ -646,14 +635,13 @@
 
     /* ---------- Hình nền ---------- */
     function applyBackground(url) {
+      const layer = $('bgLayer');
       if (url) {
-        document.body.style.backgroundImage =
-          'linear-gradient(rgba(239,246,255,.82), rgba(219,234,254,.9)), url("' + url + '")';
-        document.body.style.backgroundSize = 'cover';
-        document.body.style.backgroundPosition = 'center';
-        document.body.style.backgroundAttachment = 'fixed';
+        // Lớp phủ mờ trắng-xanh để chữ/card vẫn đọc rõ; ảnh nằm trong cột mobile
+        layer.style.backgroundImage =
+          'linear-gradient(rgba(239,246,255,.80), rgba(219,234,254,.88)), url("' + url + '")';
       } else {
-        document.body.style.backgroundImage = '';
+        layer.style.backgroundImage = '';
       }
     }
     async function loadConfig() {
@@ -708,6 +696,10 @@
     }
 
     /* ---------- Init ---------- */
+    (function initLogo() {
+      if (LOGO_URL) $('logoBadge').innerHTML =
+        '<img src="' + LOGO_URL + '" alt="LTS" class="h-full w-full object-cover" onerror="this.parentElement.innerHTML=\'<span class=&quot;text-lg font-extrabold text-brand-700&quot;>LTS</span>\'">';
+    })();
     activateTab('form');
     loadMembers();
     loadConfig();
