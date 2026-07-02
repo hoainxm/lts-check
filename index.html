@@ -1,756 +1,1326 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LTS Check</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: { sans: ['Inter', 'sans-serif'] },
-          colors: {
-            brand: {
-              50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd',
-              400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8',
-              800: '#1e40af', 900: '#1e3a8a',
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LTS Check</title>
+    <link rel="icon" type="image/jpeg" href="lts-logo.jpg" />
+    <link rel="apple-touch-icon" href="lts-logo.jpg" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: { sans: ["Inter", "sans-serif"] },
+            colors: {
+              brand: {
+                50: "#eff6ff",
+                100: "#dbeafe",
+                200: "#bfdbfe",
+                300: "#93c5fd",
+                400: "#60a5fa",
+                500: "#3b82f6",
+                600: "#2563eb",
+                700: "#1d4ed8",
+                800: "#1e40af",
+                900: "#1e3a8a",
+              },
             },
           },
         },
-      },
-    };
-  </script>
-  <style>
-    body { -webkit-tap-highlight-color: transparent; }
-    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
-    .tab-panel { display: none; }
-    .tab-panel.active { display: block; animation: fadeUp .28s cubic-bezier(.16,1,.3,1); }
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-    @keyframes pop { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
-    .card-in { animation: pop .3s cubic-bezier(.16,1,.3,1); }
-    /* select gọn, đồng nhất mũi tên */
-    select { -webkit-appearance: none; appearance: none; background-image:
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2394a3b8'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right .6rem center; background-size: 1.1em; padding-right: 2rem; }
-    *:focus-visible { outline: none; }
-    @media (prefers-reduced-motion: reduce) { *, .tab-panel.active, .card-in { animation: none !important; } }
-  </style>
-</head>
-<body class="min-h-screen bg-gradient-to-br from-brand-50 via-white to-brand-100 font-sans text-slate-800 antialiased">
+      };
+    </script>
+    <style>
+      body {
+        -webkit-tap-highlight-color: transparent;
+      }
+      input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+      }
+      .tab-panel {
+        display: none;
+      }
+      .tab-panel.active {
+        display: block;
+        animation: fadeUp 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      @keyframes pop {
+        from {
+          opacity: 0;
+          transform: scale(0.96);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      .card-in {
+        animation: pop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      /* select gọn, đồng nhất mũi tên */
+      select {
+        -webkit-appearance: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2394a3b8'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.6rem center;
+        background-size: 1.1em;
+        padding-right: 2rem;
+      }
+      *:focus-visible {
+        outline: none;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        .tab-panel.active,
+        .card-in {
+          animation: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body
+    class="min-h-screen bg-gradient-to-br from-brand-50 via-white to-brand-100 font-sans text-slate-800 antialiased"
+  >
+    <!-- ==================== CONFIG ==================== -->
+    <script>
+      const API_URL =
+        "https://script.google.com/macros/s/AKfycbw5llvK_JrR4sjG1cZtB9aSUmUI-X9LSib4KUvOKgCLJaZwCexHGxlAc4v_I8AVV_zy8g/exec";
+      const PRACTICE_TIME = "18:30"; // giờ tập chuẩn — client hiển thị
+      const LOGO_URL = "lts-logo.jpg"; // logo team; để trống -> hiện chữ "LTS"
+    </script>
 
-  <!-- ==================== CONFIG ==================== -->
-  <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbw5llvK_JrR4sjG1cZtB9aSUmUI-X9LSib4KUvOKgCLJaZwCexHGxlAc4v_I8AVV_zy8g/exec";
-    const PRACTICE_TIME = "18:30"; // giờ tập chuẩn — client hiển thị
-    const LOGO_URL = "lts-logo.jpg"; // logo team; để trống -> hiện chữ "LTS"
-  </script>
+    <!-- Lớp hình nền: giới hạn theo cột mobile (không phủ full màn hình) -->
+    <div
+      id="bgLayer"
+      class="pointer-events-none fixed inset-y-0 left-1/2 -z-10 w-full max-w-lg -translate-x-1/2 bg-cover bg-center bg-no-repeat"
+    ></div>
 
-  <!-- Lớp hình nền: giới hạn theo cột mobile (không phủ full màn hình) -->
-  <div id="bgLayer" class="pointer-events-none fixed inset-y-0 left-1/2 -z-10 w-full max-w-lg -translate-x-1/2 bg-cover bg-center bg-no-repeat"></div>
+    <div class="mx-auto flex min-h-screen max-w-lg flex-col px-4 py-3 sm:py-5">
+      <!-- Header gọn: logo trái + tiêu đề, nút quản lý phải -->
+      <header class="mb-3 flex items-center gap-3">
+        <div
+          id="logoBadge"
+          class="flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-slate-200"
+        >
+          <span class="text-lg font-extrabold tracking-tight text-brand-700"
+            >LTS</span
+          >
+        </div>
+        <div class="min-w-0 flex-1">
+          <h1 class="truncate text-lg font-bold leading-tight text-slate-900">
+            Đăng ký đi trễ / nghỉ
+          </h1>
+          <p class="text-xs text-slate-500">
+            Buổi tập lúc <span class="font-semibold text-brand-700">18:30</span>
+          </p>
+        </div>
+        <button
+          id="adminGear"
+          title="Khu quản lý"
+          class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/80 text-base shadow ring-1 ring-slate-200 transition hover:bg-brand-50 hover:ring-brand-300"
+        >
+          🔒
+        </button>
+      </header>
 
-  <div class="mx-auto flex min-h-screen max-w-lg flex-col px-4 py-3 sm:py-5">
+      <!-- Tabs (ẩn với user thường; chỉ hiện khi vào khu quản lý) -->
+      <nav
+        id="tabNav"
+        class="mb-3 hidden grid-cols-1 gap-1 rounded-2xl bg-white/70 p-1 shadow-sm ring-1 ring-slate-200"
+      >
+        <button
+          data-tab="form"
+          class="tab-btn rounded-xl px-3 py-2.5 text-sm font-semibold transition"
+        >
+          📝 Gửi
+        </button>
+        <button
+          data-tab="approve"
+          class="tab-btn hidden rounded-xl px-3 py-2.5 text-sm font-semibold transition"
+        >
+          ✅ Duyệt
+        </button>
+        <button
+          data-tab="stats"
+          class="tab-btn hidden rounded-xl px-3 py-2.5 text-sm font-semibold transition"
+        >
+          📊 Thống kê
+        </button>
+        <button
+          data-tab="history"
+          class="tab-btn hidden rounded-xl px-3 py-2.5 text-sm font-semibold transition"
+        >
+          🕘 Lịch sử
+        </button>
+      </nav>
 
-    <!-- Header gọn: logo trái + tiêu đề, nút quản lý phải -->
-    <header class="mb-3 flex items-center gap-3">
-      <div id="logoBadge" class="flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-slate-200">
-        <span class="text-lg font-extrabold tracking-tight text-brand-700">LTS</span>
-      </div>
-      <div class="min-w-0 flex-1">
-        <h1 class="truncate text-lg font-bold leading-tight text-slate-900">Đăng ký đi trễ / nghỉ</h1>
-        <p class="text-xs text-slate-500">Buổi tập lúc <span class="font-semibold text-brand-700">18:30</span></p>
-      </div>
-      <button id="adminGear" title="Khu quản lý"
-        class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/80 text-base shadow ring-1 ring-slate-200 transition hover:bg-brand-50 hover:ring-brand-300">🔒</button>
-    </header>
-
-    <!-- Tabs (ẩn với user thường; chỉ hiện khi vào khu quản lý) -->
-    <nav id="tabNav" class="mb-3 hidden grid-cols-1 gap-1 rounded-2xl bg-white/70 p-1 shadow-sm ring-1 ring-slate-200">
-      <button data-tab="form" class="tab-btn rounded-xl px-3 py-2.5 text-sm font-semibold transition">📝 Gửi</button>
-      <button data-tab="approve" class="tab-btn hidden rounded-xl px-3 py-2.5 text-sm font-semibold transition">✅ Duyệt</button>
-      <button data-tab="stats" class="tab-btn hidden rounded-xl px-3 py-2.5 text-sm font-semibold transition">📊 Thống kê</button>
-      <button data-tab="history" class="tab-btn hidden rounded-xl px-3 py-2.5 text-sm font-semibold transition">🕘 Lịch sử</button>
-    </nav>
-
-    <main class="flex-1">
-
-      <!-- ========== TAB: FORM ========== -->
-      <section id="panel-form" class="tab-panel active">
-        <div class="rounded-2xl border border-slate-200/70 bg-white/90 p-4 shadow-xl shadow-slate-200/60 backdrop-blur">
-          <form id="requestForm" class="space-y-2.5" novalidate>
-            <div>
-              <label for="name" class="mb-1 block text-xs font-semibold text-slate-700">Thành viên <span class="text-red-500">*</span></label>
-              <select id="name" required
-                class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100">
-                <option value="">Đang tải danh sách…</option>
-              </select>
-            </div>
-
-            <div>
-              <span class="mb-1 block text-xs font-semibold text-slate-700">Loại yêu cầu <span class="text-red-500">*</span></span>
-              <div class="grid grid-cols-2 gap-2">
-                <label class="cursor-pointer">
-                  <input type="radio" name="type" value="Đi trễ" class="peer sr-only" checked />
-                  <div class="flex items-center justify-center gap-1.5 rounded-xl border-2 border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition peer-checked:border-brand-600 peer-checked:bg-brand-50 peer-checked:text-brand-700">⏰ Đi trễ</div>
-                </label>
-                <label class="cursor-pointer">
-                  <input type="radio" name="type" value="Nghỉ" class="peer sr-only" />
-                  <div class="flex items-center justify-center gap-1.5 rounded-xl border-2 border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition peer-checked:border-brand-600 peer-checked:bg-brand-50 peer-checked:text-brand-700">🚫 Nghỉ</div>
-                </label>
+      <main class="flex-1">
+        <!-- ========== TAB: FORM ========== -->
+        <section id="panel-form" class="tab-panel active">
+          <div
+            class="rounded-2xl border border-slate-200/70 bg-white/90 p-4 shadow-xl shadow-slate-200/60 backdrop-blur"
+          >
+            <form id="requestForm" class="space-y-2.5" novalidate>
+              <div>
+                <label
+                  for="name"
+                  class="mb-1 block text-xs font-semibold text-slate-700"
+                  >Thành viên <span class="text-red-500">*</span></label
+                >
+                <select
+                  id="name"
+                  required
+                  class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
+                >
+                  <option value="">Đang tải danh sách…</option>
+                </select>
               </div>
-            </div>
 
-            <div class="grid grid-cols-2 gap-2">
-              <div id="dateWrap">
-                <label for="date" class="mb-1 block text-xs font-semibold text-slate-700">Ngày <span class="text-red-500">*</span></label>
-                <input type="date" id="date" required
-                  class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100" />
-              </div>
-              <div id="arrivalWrap">
-                <label class="mb-1 block text-xs font-semibold text-slate-700">Giờ đến (24h) <span class="text-red-500">*</span></label>
-                <div class="flex items-center gap-1">
-                  <select id="arrHour" aria-label="Giờ"
-                    class="w-full rounded-xl border border-slate-300 bg-white px-2 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100"></select>
-                  <span class="font-bold text-slate-400">:</span>
-                  <select id="arrMin" aria-label="Phút"
-                    class="w-full rounded-xl border border-slate-300 bg-white px-2 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100"></select>
+              <div>
+                <span class="mb-1 block text-xs font-semibold text-slate-700"
+                  >Loại yêu cầu <span class="text-red-500">*</span></span
+                >
+                <div class="grid grid-cols-2 gap-2">
+                  <label class="cursor-pointer">
+                    <input
+                      type="radio"
+                      name="type"
+                      value="Đi trễ"
+                      class="peer sr-only"
+                      checked
+                    />
+                    <div
+                      class="flex items-center justify-center gap-1.5 rounded-xl border-2 border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition peer-checked:border-brand-600 peer-checked:bg-brand-50 peer-checked:text-brand-700"
+                    >
+                      ⏰ Đi trễ
+                    </div>
+                  </label>
+                  <label class="cursor-pointer">
+                    <input
+                      type="radio"
+                      name="type"
+                      value="Nghỉ"
+                      class="peer sr-only"
+                    />
+                    <div
+                      class="flex items-center justify-center gap-1.5 rounded-xl border-2 border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 transition peer-checked:border-brand-600 peer-checked:bg-brand-50 peer-checked:text-brand-700"
+                    >
+                      🚫 Nghỉ
+                    </div>
+                  </label>
                 </div>
               </div>
-            </div>
-            <p id="lateHint" class="text-xs text-slate-500"></p>
 
-            <div>
-              <label for="reason" class="mb-1 block text-xs font-semibold text-slate-700">Lý do <span class="text-red-500">*</span></label>
-              <textarea id="reason" rows="2" required placeholder="VD: Kẹt xe / có việc gia đình…"
-                class="w-full resize-none rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100"></textarea>
-            </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div id="dateWrap">
+                  <label
+                    for="date"
+                    class="mb-1 block text-xs font-semibold text-slate-700"
+                    >Ngày <span class="text-red-500">*</span></label
+                  >
+                  <input
+                    type="date"
+                    id="date"
+                    required
+                    class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
+                  />
+                </div>
+                <div id="arrivalWrap">
+                  <label class="mb-1 block text-xs font-semibold text-slate-700"
+                    >Giờ đến (24h) <span class="text-red-500">*</span></label
+                  >
+                  <div class="flex items-center gap-1">
+                    <select
+                      id="arrHour"
+                      aria-label="Giờ"
+                      class="w-full rounded-xl border border-slate-300 bg-white px-2 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
+                    ></select>
+                    <span class="font-bold text-slate-400">:</span>
+                    <select
+                      id="arrMin"
+                      aria-label="Phút"
+                      class="w-full rounded-xl border border-slate-300 bg-white px-2 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
+                    ></select>
+                  </div>
+                </div>
+              </div>
+              <p id="lateHint" class="text-xs text-slate-500"></p>
 
-            <button type="submit" id="submitBtn"
-              class="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-brand-700/30 transition hover:bg-brand-800 active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-70">
-              <svg id="spinner" class="hidden h-5 w-5 animate-spin text-white" viewBox="0 0 24 24" fill="none">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z"></path>
-              </svg>
-              <span id="submitText">Gửi yêu cầu</span>
+              <div>
+                <label
+                  for="reason"
+                  class="mb-1 block text-xs font-semibold text-slate-700"
+                  >Lý do <span class="text-red-500">*</span></label
+                >
+                <textarea
+                  id="reason"
+                  rows="2"
+                  required
+                  placeholder="VD: Kẹt xe / có việc gia đình…"
+                  class="w-full resize-none rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
+                ></textarea>
+              </div>
+
+              <button
+                type="submit"
+                id="submitBtn"
+                class="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-brand-700/30 transition hover:bg-brand-800 active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                <svg
+                  id="spinner"
+                  class="hidden h-5 w-5 animate-spin text-white"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                  ></circle>
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z"
+                  ></path>
+                </svg>
+                <span id="submitText">Gửi yêu cầu</span>
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <!-- ========== TAB: APPROVE ========== -->
+        <section id="panel-approve" class="tab-panel">
+          <div
+            class="rounded-3xl border border-slate-200/70 bg-white/90 p-5 shadow-xl shadow-slate-200/60 backdrop-blur sm:p-6"
+          >
+            <div class="mb-4 flex items-center justify-between gap-2">
+              <h3 class="text-sm font-bold text-slate-800">
+                ⏳ Yêu cầu chờ duyệt
+              </h3>
+              <button
+                id="approveReload"
+                class="rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-800"
+              >
+                ↻ Tải lại
+              </button>
+            </div>
+            <p class="mb-3 text-xs text-slate-500">
+              Duyệt → thêm vào bảng thống kê. Từ chối → xoá, không lưu.
+            </p>
+            <div id="approveBody" class="space-y-3 text-sm text-slate-500">
+              Đang tải…
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== TAB: STATS ========== -->
+        <section id="panel-stats" class="tab-panel">
+          <!-- Đổi hình nền (admin) -->
+          <div
+            class="mb-4 rounded-3xl border border-slate-200/70 bg-white/90 p-5 shadow-xl shadow-slate-200/60 backdrop-blur sm:p-6"
+          >
+            <h3 class="mb-1 text-sm font-bold text-slate-800">
+              🎨 Đổi hình nền web
+            </h3>
+            <p class="mb-3 text-xs text-slate-500">
+              Dán link ảnh (http/https). Áp dụng cho tất cả mọi người.
+            </p>
+            <div class="flex gap-2">
+              <input
+                id="bgUrlInput"
+                type="url"
+                placeholder="https://…/anh.jpg"
+                class="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
+              />
+              <button
+                id="bgSave"
+                class="rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-800 disabled:opacity-70"
+              >
+                Lưu
+              </button>
+              <button
+                id="bgReset"
+                class="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+              >
+                Xoá
+              </button>
+            </div>
+          </div>
+
+          <div
+            class="rounded-3xl border border-slate-200/70 bg-white/90 p-5 shadow-xl shadow-slate-200/60 backdrop-blur sm:p-6"
+          >
+            <div class="mb-4 flex items-center gap-2">
+              <select
+                id="statsMonth"
+                class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
+              ></select>
+              <select
+                id="statsYear"
+                class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
+              ></select>
+              <button
+                id="statsReload"
+                class="ml-auto rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-800"
+              >
+                Xem
+              </button>
+            </div>
+            <div id="statsBody" class="text-sm text-slate-500">
+              Chọn tháng rồi bấm Xem.
+            </div>
+            <a
+              id="sheetLink"
+              href="#"
+              target="_blank"
+              rel="noopener"
+              class="mt-4 hidden items-center justify-center gap-1.5 rounded-xl border border-brand-200 bg-brand-50 px-4 py-2.5 text-sm font-semibold text-brand-700 transition hover:bg-brand-100 sm:inline-flex"
+            >
+              🔗 Mở Google Sheet
+            </a>
+          </div>
+        </section>
+
+        <!-- ========== TAB: HISTORY ========== -->
+        <section id="panel-history" class="tab-panel">
+          <div
+            class="rounded-3xl border border-slate-200/70 bg-white/90 p-5 shadow-xl shadow-slate-200/60 backdrop-blur sm:p-6"
+          >
+            <div class="mb-4 flex items-center gap-2">
+              <select
+                id="historyName"
+                class="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
+              >
+                <option value="">— Chọn tên —</option>
+              </select>
+              <button
+                id="historyReload"
+                class="rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-800"
+              >
+                Xem
+              </button>
+            </div>
+            <div id="historyBody" class="space-y-3 text-sm text-slate-500">
+              Chọn tên để xem lịch sử.
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="mt-3 text-center text-xs text-slate-400">
+        <p>LTS Dance Team</p>
+      </footer>
+    </div>
+
+    <!-- Modal PIN -->
+    <div
+      id="pinModal"
+      class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 px-4 backdrop-blur-sm"
+    >
+      <div class="w-full max-w-xs rounded-3xl bg-white p-6 shadow-2xl">
+        <h3 class="mb-1 text-lg font-bold text-slate-900">
+          🔒 Đăng nhập quản lý
+        </h3>
+        <p class="mb-4 text-xs text-slate-500">
+          Nhập mã PIN để xem thống kê & lịch sử.
+        </p>
+        <form id="pinForm">
+          <input
+            id="pinInput"
+            type="password"
+            inputmode="numeric"
+            autocomplete="off"
+            placeholder="Mã PIN"
+            class="w-full rounded-xl border border-slate-300 px-4 py-3 text-center text-lg tracking-widest outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
+          />
+          <p
+            id="pinError"
+            class="mt-2 hidden text-center text-xs font-semibold text-red-600"
+          ></p>
+          <div class="mt-4 flex gap-2">
+            <button
+              type="button"
+              id="pinCancel"
+              class="flex-1 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+            >
+              Huỷ
             </button>
-          </form>
-        </div>
-      </section>
-
-      <!-- ========== TAB: APPROVE ========== -->
-      <section id="panel-approve" class="tab-panel">
-        <div class="rounded-3xl border border-slate-200/70 bg-white/90 p-5 shadow-xl shadow-slate-200/60 backdrop-blur sm:p-6">
-          <div class="mb-4 flex items-center justify-between gap-2">
-            <h3 class="text-sm font-bold text-slate-800">⏳ Yêu cầu chờ duyệt</h3>
-            <button id="approveReload" class="rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-800">↻ Tải lại</button>
+            <button
+              type="submit"
+              id="pinSubmit"
+              class="flex-1 rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-brand-800 disabled:opacity-70"
+            >
+              Vào
+            </button>
           </div>
-          <p class="mb-3 text-xs text-slate-500">Duyệt → thêm vào bảng thống kê. Từ chối → xoá, không lưu.</p>
-          <div id="approveBody" class="space-y-3 text-sm text-slate-500">Đang tải…</div>
-        </div>
-      </section>
+        </form>
+      </div>
+    </div>
 
-      <!-- ========== TAB: STATS ========== -->
-      <section id="panel-stats" class="tab-panel">
-        <!-- Đổi hình nền (admin) -->
-        <div class="mb-4 rounded-3xl border border-slate-200/70 bg-white/90 p-5 shadow-xl shadow-slate-200/60 backdrop-blur sm:p-6">
-          <h3 class="mb-1 text-sm font-bold text-slate-800">🎨 Đổi hình nền web</h3>
-          <p class="mb-3 text-xs text-slate-500">Dán link ảnh (http/https). Áp dụng cho tất cả mọi người.</p>
-          <div class="flex gap-2">
-            <input id="bgUrlInput" type="url" placeholder="https://…/anh.jpg"
-              class="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100" />
-            <button id="bgSave" class="rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-800 disabled:opacity-70">Lưu</button>
-            <button id="bgReset" class="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">Xoá</button>
-          </div>
-        </div>
-
-        <div class="rounded-3xl border border-slate-200/70 bg-white/90 p-5 shadow-xl shadow-slate-200/60 backdrop-blur sm:p-6">
-          <div class="mb-4 flex items-center gap-2">
-            <select id="statsMonth" class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100"></select>
-            <select id="statsYear" class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100"></select>
-            <button id="statsReload" class="ml-auto rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-800">Xem</button>
-          </div>
-          <div id="statsBody" class="text-sm text-slate-500">Chọn tháng rồi bấm Xem.</div>
-          <a id="sheetLink" href="#" target="_blank" rel="noopener"
-             class="mt-4 hidden items-center justify-center gap-1.5 rounded-xl border border-brand-200 bg-brand-50 px-4 py-2.5 text-sm font-semibold text-brand-700 transition hover:bg-brand-100 sm:inline-flex">
-            🔗 Mở Google Sheet
-          </a>
-        </div>
-      </section>
-
-      <!-- ========== TAB: HISTORY ========== -->
-      <section id="panel-history" class="tab-panel">
-        <div class="rounded-3xl border border-slate-200/70 bg-white/90 p-5 shadow-xl shadow-slate-200/60 backdrop-blur sm:p-6">
-          <div class="mb-4 flex items-center gap-2">
-            <select id="historyName" class="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100">
-              <option value="">— Chọn tên —</option>
-            </select>
-            <button id="historyReload" class="rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-800">Xem</button>
-          </div>
-          <div id="historyBody" class="space-y-3 text-sm text-slate-500">Chọn tên để xem lịch sử.</div>
-        </div>
-      </section>
-
-    </main>
-
-    <footer class="mt-3 text-center text-xs text-slate-400">
-      <p>LTS Dance Team · lưu về Google Sheet</p>
-      <button id="managerBtn" class="mt-1 hidden font-semibold text-slate-400 underline decoration-dotted transition hover:text-brand-600">🔒 Khu quản lý</button>
-      <button id="logoutBtn" class="mt-1 hidden font-semibold text-red-400 underline decoration-dotted transition hover:text-red-600">🚪 Thoát quản lý</button>
-    </footer>
-  </div>
-
-  <!-- Modal PIN -->
-  <div id="pinModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 px-4 backdrop-blur-sm">
-    <div class="w-full max-w-xs rounded-3xl bg-white p-6 shadow-2xl">
-      <h3 class="mb-1 text-lg font-bold text-slate-900">🔒 Đăng nhập quản lý</h3>
-      <p class="mb-4 text-xs text-slate-500">Nhập mã PIN để xem thống kê & lịch sử.</p>
-      <form id="pinForm">
-        <input id="pinInput" type="password" inputmode="numeric" autocomplete="off" placeholder="Mã PIN"
-          class="w-full rounded-xl border border-slate-300 px-4 py-3 text-center text-lg tracking-widest outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100" />
-        <p id="pinError" class="mt-2 hidden text-center text-xs font-semibold text-red-600"></p>
+    <!-- Modal Ghi chú (duyệt/từ chối) -->
+    <div
+      id="noteModal"
+      class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 px-4 backdrop-blur-sm"
+    >
+      <div class="w-full max-w-xs rounded-3xl bg-white p-6 shadow-2xl">
+        <h3 id="noteTitle" class="mb-1 text-lg font-bold text-slate-900">Ghi chú</h3>
+        <p id="noteReq" class="mb-3 hidden text-xs font-semibold text-red-500">
+          * Bắt buộc nhập lý do khi từ chối
+        </p>
+        <textarea
+          id="noteInput"
+          rows="3"
+          placeholder="Ghi chú…"
+          class="w-full resize-none rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
+        ></textarea>
+        <p id="noteErr" class="mt-1 hidden text-xs font-semibold text-red-600"></p>
         <div class="mt-4 flex gap-2">
-          <button type="button" id="pinCancel" class="flex-1 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">Huỷ</button>
-          <button type="submit" id="pinSubmit" class="flex-1 rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-brand-800 disabled:opacity-70">Vào</button>
+          <button
+            type="button"
+            id="noteCancel"
+            class="flex-1 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+          >
+            Huỷ
+          </button>
+          <button
+            type="button"
+            id="noteConfirm"
+            class="flex-1 rounded-xl px-4 py-2.5 text-sm font-bold text-white transition"
+          >
+            Xác nhận
+          </button>
         </div>
-      </form>
+      </div>
     </div>
-  </div>
 
-  <!-- Toast -->
-  <div id="toast" class="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex justify-center px-4 opacity-0 transition-all duration-300">
-    <div id="toastInner" class="pointer-events-auto flex max-w-sm items-center gap-3 rounded-2xl px-5 py-3.5 text-sm font-semibold text-white shadow-2xl">
-      <span id="toastIcon"></span><span id="toastMsg"></span>
+    <!-- Toast -->
+    <div
+      id="toast"
+      class="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex translate-y-4 justify-center px-4 opacity-0 transition-all duration-300"
+    >
+      <div
+        id="toastInner"
+        class="pointer-events-auto flex max-w-sm items-center gap-3 rounded-2xl px-5 py-3.5 text-sm font-semibold text-white shadow-2xl"
+      >
+        <span id="toastIcon"></span><span id="toastMsg"></span>
+      </div>
     </div>
-  </div>
 
-  <!-- ==================== SCRIPT ==================== -->
-  <script>
-    const $ = (id) => document.getElementById(id);
-    let MEMBERS = [];
+    <!-- ==================== SCRIPT ==================== -->
+    <script>
+      const $ = (id) => document.getElementById(id);
+      let MEMBERS = [];
 
-    /* ---------- Quản lý (PIN) ---------- */
-    const getPin = () => sessionStorage.getItem('lts_pin') || '';
-    const isManager = () => !!getPin();
+      /* ---------- Quản lý (PIN) ---------- */
+      const getPin = () => sessionStorage.getItem("lts_pin") || "";
+      const isManager = () => !!getPin();
 
-    function unlockManager(sheetUrl) {
-      document.querySelectorAll('.tab-btn.hidden').forEach((b) => b.classList.remove('hidden'));
-      $('tabNav').classList.remove('hidden', 'grid-cols-1');
-      $('tabNav').classList.add('grid', 'grid-cols-2', 'sm:grid-cols-4');
-      $('managerBtn').classList.add('hidden');
-      $('adminGear').textContent = '🔓';
-      $('adminGear').title = 'Đang ở khu quản lý';
-      $('logoutBtn').classList.remove('hidden');
-      if (sheetUrl) {
-        const link = $('sheetLink');
-        link.href = sheetUrl;
-        link.classList.remove('hidden');
-        link.classList.add('inline-flex');
-      }
-    }
-    function lockManager() {
-      sessionStorage.removeItem('lts_pin');
-      document.querySelectorAll('.tab-btn[data-tab="approve"], .tab-btn[data-tab="stats"], .tab-btn[data-tab="history"]').forEach((b) => b.classList.add('hidden'));
-      $('tabNav').classList.add('hidden', 'grid-cols-1');
-      $('tabNav').classList.remove('grid', 'grid-cols-2', 'sm:grid-cols-4');
-      $('adminGear').textContent = '🔒';
-      $('adminGear').title = 'Khu quản lý';
-      $('logoutBtn').classList.add('hidden');
-      $('sheetLink').classList.add('hidden');
-      activateTab('form');
-    }
-
-    // Modal PIN
-    function openPinModal() {
-      $('pinError').classList.add('hidden');
-      $('pinInput').value = '';
-      $('pinModal').classList.remove('hidden');
-      $('pinModal').classList.add('flex');
-      setTimeout(() => $('pinInput').focus(), 50);
-    }
-    function doLogout() { lockManager(); showToast('Đã thoát quản lý.', true); }
-    // Đã đăng nhập -> gear = thoát; chưa -> mở ô PIN
-    $('managerBtn').addEventListener('click', () => { if (isManager()) doLogout(); else openPinModal(); });
-    $('adminGear').addEventListener('click', () => { if (isManager()) doLogout(); else openPinModal(); });
-    $('pinCancel').addEventListener('click', closePinModal);
-    function closePinModal() {
-      $('pinModal').classList.add('hidden');
-      $('pinModal').classList.remove('flex');
-    }
-    $('pinForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const pin = $('pinInput').value.trim();
-      if (!pin) return;
-      $('pinSubmit').disabled = true;
-      $('pinSubmit').textContent = 'Đang kiểm tra…';
-      try {
-        const res = await fetch(API_URL + '?action=login&pin=' + encodeURIComponent(pin));
-        const data = await res.json();
-        if (data.status === 'success') {
-          sessionStorage.setItem('lts_pin', pin);
-          unlockManager(data.sheetUrl);
-          closePinModal();
-          activateTab('approve');
-          showToast('Đã vào khu quản lý.', true);
-        } else {
-          $('pinError').textContent = data.message || 'Sai mã PIN.';
-          $('pinError').classList.remove('hidden');
+      function unlockManager(sheetUrl) {
+        document
+          .querySelectorAll(".tab-btn.hidden")
+          .forEach((b) => b.classList.remove("hidden"));
+        $("tabNav").classList.remove("hidden", "grid-cols-1");
+        $("tabNav").classList.add("grid", "grid-cols-2", "sm:grid-cols-4");
+        $("adminGear").textContent = "🔓";
+        $("adminGear").title = "Thoát quản lý";
+        if (sheetUrl) {
+          const link = $("sheetLink");
+          link.href = sheetUrl;
+          link.classList.remove("hidden");
+          link.classList.add("inline-flex");
         }
-      } catch (err) {
-        $('pinError').textContent = 'Lỗi kết nối, thử lại.';
-        $('pinError').classList.remove('hidden');
-      } finally {
-        $('pinSubmit').disabled = false;
-        $('pinSubmit').textContent = 'Vào';
       }
-    });
-    $('logoutBtn').addEventListener('click', doLogout);
+      function lockManager() {
+        sessionStorage.removeItem("lts_pin");
+        document
+          .querySelectorAll(
+            '.tab-btn[data-tab="approve"], .tab-btn[data-tab="stats"], .tab-btn[data-tab="history"]',
+          )
+          .forEach((b) => b.classList.add("hidden"));
+        $("tabNav").classList.add("hidden", "grid-cols-1");
+        $("tabNav").classList.remove("grid", "grid-cols-2", "sm:grid-cols-4");
+        $("adminGear").textContent = "🔒";
+        $("adminGear").title = "Khu quản lý";
+        $("sheetLink").classList.add("hidden");
+        activateTab("form");
+      }
 
-    /* ---------- Tabs ---------- */
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    function activateTab(name) {
-      if ((name === 'approve' || name === 'stats' || name === 'history') && !isManager()) name = 'form';
-      tabBtns.forEach((b) => {
-        const on = b.dataset.tab === name;
-        b.classList.toggle('bg-brand-700', on);
-        b.classList.toggle('text-white', on);
-        b.classList.toggle('shadow', on);
-        b.classList.toggle('text-slate-600', !on);
+      // Modal PIN
+      function openPinModal() {
+        $("pinError").classList.add("hidden");
+        $("pinInput").value = "";
+        $("pinModal").classList.remove("hidden");
+        $("pinModal").classList.add("flex");
+        setTimeout(() => $("pinInput").focus(), 50);
+      }
+      function doLogout() {
+        lockManager();
+        showToast("Đã thoát quản lý.", true);
+      }
+      // Nút 🔒/🔓 góc trên: đã đăng nhập -> thoát; chưa -> mở ô PIN
+      $("adminGear").addEventListener("click", () => {
+        if (isManager()) doLogout();
+        else openPinModal();
       });
-      document.querySelectorAll('.tab-panel').forEach((p) => p.classList.remove('active'));
-      $('panel-' + name).classList.add('active');
-      if (name === 'stats' && !$('statsBody').dataset.loaded) loadStats();
-      if (name === 'approve') loadPending();
-    }
-    tabBtns.forEach((b) => b.addEventListener('click', () => activateTab(b.dataset.tab)));
-
-    /* ---------- Toast ---------- */
-    let toastTimer;
-    function showToast(msg, ok = true) {
-      const toast = $('toast'), inner = $('toastInner');
-      $('toastMsg').textContent = msg;
-      $('toastIcon').textContent = ok ? '✅' : '⚠️';
-      inner.className = 'pointer-events-auto flex max-w-sm items-center gap-3 rounded-2xl px-5 py-3.5 text-sm font-semibold text-white shadow-2xl ' + (ok ? 'bg-green-600' : 'bg-red-600');
-      toast.classList.remove('opacity-0');
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => toast.classList.add('opacity-0'), 3500);
-    }
-
-    /* ---------- Form ---------- */
-    const form = $('requestForm'), nameSel = $('name'), arrivalWrap = $('arrivalWrap'),
-          arrHour = $('arrHour'), arrMin = $('arrMin'), lateHint = $('lateHint'), submitBtn = $('submitBtn');
-
-    // Dropdown giờ 24h (ép hiển thị 24h mọi thiết bị, không phụ thuộc đồng hồ máy)
-    (function fillTimeOptions() {
-      for (let h = 0; h < 24; h++) {
-        const o = document.createElement('option');
-        o.value = String(h).padStart(2, '0'); o.textContent = String(h).padStart(2, '0');
-        arrHour.appendChild(o);
+      $("pinCancel").addEventListener("click", closePinModal);
+      function closePinModal() {
+        $("pinModal").classList.add("hidden");
+        $("pinModal").classList.remove("flex");
       }
-      for (let m = 0; m < 60; m++) {
-        const o = document.createElement('option');
-        o.value = String(m).padStart(2, '0'); o.textContent = String(m).padStart(2, '0');
-        arrMin.appendChild(o);
-      }
-    })();
-    function currentArrival() { return arrHour.value + ':' + arrMin.value; }
-    function setArrivalNow() {
-      const d = new Date();
-      arrHour.value = String(d.getHours()).padStart(2, '0');
-      arrMin.value = String(d.getMinutes()).padStart(2, '0');
-    }
-
-    (function initDate() {
-      const iso = new Date().toISOString().slice(0, 10);
-      $('date').value = iso;
-      $('date').min = iso;
-      setArrivalNow(); // mặc định = giờ hiện tại (VD 15:02)
-    })();
-
-    function currentType() {
-      const el = document.querySelector('input[name="type"]:checked');
-      return el ? el.value : 'Đi trễ';
-    }
-    function syncTypeUI() {
-      const isLate = currentType() === 'Đi trễ';
-      arrivalWrap.classList.toggle('hidden', !isLate);
-      // Nghỉ -> ô Ngày chiếm full chiều ngang cho gọn
-      $('dateWrap').classList.toggle('col-span-2', !isLate);
-      updateLateHint();
-    }
-    document.querySelectorAll('input[name="type"]').forEach((r) => r.addEventListener('change', syncTypeUI));
-
-    function updateLateHint() {
-      if (currentType() !== 'Đi trễ') { lateHint.textContent = ''; return; }
-      const [ph, pm] = PRACTICE_TIME.split(':').map(Number);
-      const [ah, am] = currentArrival().split(':').map(Number);
-      const diff = (ah * 60 + am) - (ph * 60 + pm);
-      if (diff <= 0) {
-        lateHint.textContent = '✅ Đến trước/đúng giờ tập (18:30) — ghi trễ 0 phút.';
-        lateHint.className = 'mt-1.5 text-xs text-green-600';
-      } else {
-        lateHint.textContent = '⏱ Trễ khoảng ' + diff + ' phút so với 18:30.';
-        lateHint.className = 'mt-1.5 text-xs text-amber-600';
-      }
-    }
-    arrHour.addEventListener('change', updateLateHint);
-    arrMin.addEventListener('change', updateLateHint);
-
-    function setLoading(on) {
-      submitBtn.disabled = on;
-      $('spinner').classList.toggle('hidden', !on);
-      $('submitText').textContent = on ? 'Đang gửi…' : 'Gửi yêu cầu';
-    }
-
-    async function loadMembers() {
-      try {
-        const res = await fetch(API_URL + '?action=members');
-        const data = await res.json();
-        MEMBERS = (data.status === 'success' && data.members) ? data.members : [];
-        fillMemberSelect(nameSel, '— Chọn tên —');
-        fillMemberSelect($('historyName'), '— Chọn tên —');
-        if (!MEMBERS.length) nameSel.innerHTML = '<option value="">(Chưa có thành viên trong Sheet)</option>';
-      } catch (e) {
-        nameSel.innerHTML = '<option value="">Lỗi tải danh sách — thử lại</option>';
-        showToast('Không tải được danh sách thành viên.', false);
-      }
-    }
-    function fillMemberSelect(sel, placeholder) {
-      sel.innerHTML = '<option value="">' + placeholder + '</option>';
-      MEMBERS.forEach((m) => {
-        const o = document.createElement('option');
-        o.value = m; o.textContent = m;
-        sel.appendChild(o);
+      $("pinForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const pin = $("pinInput").value.trim();
+        if (!pin) return;
+        $("pinSubmit").disabled = true;
+        $("pinSubmit").textContent = "Đang kiểm tra…";
+        try {
+          const res = await fetch(
+            API_URL + "?action=login&pin=" + encodeURIComponent(pin),
+          );
+          const data = await res.json();
+          if (data.status === "success") {
+            sessionStorage.setItem("lts_pin", pin);
+            unlockManager(data.sheetUrl);
+            closePinModal();
+            activateTab("approve");
+            showToast("Đã vào khu quản lý.", true);
+          } else {
+            $("pinError").textContent = data.message || "Sai mã PIN.";
+            $("pinError").classList.remove("hidden");
+          }
+        } catch (err) {
+          $("pinError").textContent = "Lỗi kết nối, thử lại.";
+          $("pinError").classList.remove("hidden");
+        } finally {
+          $("pinSubmit").disabled = false;
+          $("pinSubmit").textContent = "Vào";
+        }
       });
-    }
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const payload = {
-        name: nameSel.value.trim(),
-        type: currentType(),
-        date: $('date').value,
-        arrivalTime: currentType() === 'Đi trễ' ? currentArrival() : '',
-        reason: $('reason').value.trim(),
-      };
-      if (!payload.name) return showToast('Vui lòng chọn thành viên.', false);
-      if (!payload.date) return showToast('Vui lòng chọn ngày.', false);
-      if (payload.type === 'Đi trễ' && !payload.arrivalTime) return showToast('Vui lòng chọn giờ đến.', false);
-      if (!payload.reason) return showToast('Vui lòng nhập lý do.', false);
-
-      setLoading(true);
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(payload),
+      /* ---------- Tabs ---------- */
+      const tabBtns = document.querySelectorAll(".tab-btn");
+      function activateTab(name) {
+        if (
+          (name === "approve" || name === "stats" || name === "history") &&
+          !isManager()
+        )
+          name = "form";
+        tabBtns.forEach((b) => {
+          const on = b.dataset.tab === name;
+          b.classList.toggle("bg-brand-700", on);
+          b.classList.toggle("text-white", on);
+          b.classList.toggle("shadow", on);
+          b.classList.toggle("text-slate-600", !on);
         });
-        const data = await res.json();
-        if (data.status === 'success') {
-          showToast(data.message || 'Đã gửi yêu cầu!', true);
-          form.reset();
-          document.querySelector('input[name="type"][value="Đi trễ"]').checked = true;
-          setArrivalNow();
-          $('date').value = new Date().toISOString().slice(0, 10);
-          syncTypeUI();
-          $('statsBody').dataset.loaded = ''; // buộc thống kê tải lại
+        document
+          .querySelectorAll(".tab-panel")
+          .forEach((p) => p.classList.remove("active"));
+        $("panel-" + name).classList.add("active");
+        if (name === "stats" && !$("statsBody").dataset.loaded) loadStats();
+        if (name === "approve") loadPending();
+      }
+      tabBtns.forEach((b) =>
+        b.addEventListener("click", () => activateTab(b.dataset.tab)),
+      );
+
+      /* ---------- Toast ---------- */
+      let toastTimer;
+      function showToast(msg, ok = true) {
+        const toast = $("toast"),
+          inner = $("toastInner");
+        $("toastMsg").textContent = msg;
+        $("toastIcon").textContent = ok ? "✅" : "⚠️";
+        inner.className =
+          "pointer-events-auto flex max-w-sm items-center gap-3 rounded-2xl px-5 py-3.5 text-sm font-semibold text-white shadow-2xl " +
+          (ok ? "bg-green-600" : "bg-red-600");
+        toast.classList.remove("opacity-0", "translate-y-4");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(
+          () => toast.classList.add("opacity-0", "translate-y-4"),
+          3000,
+        );
+      }
+
+      /* ---------- Form ---------- */
+      const form = $("requestForm"),
+        nameSel = $("name"),
+        arrivalWrap = $("arrivalWrap"),
+        arrHour = $("arrHour"),
+        arrMin = $("arrMin"),
+        lateHint = $("lateHint"),
+        submitBtn = $("submitBtn");
+
+      // Dropdown giờ 24h (ép hiển thị 24h mọi thiết bị, không phụ thuộc đồng hồ máy)
+      (function fillTimeOptions() {
+        for (let h = 0; h < 24; h++) {
+          const o = document.createElement("option");
+          o.value = String(h).padStart(2, "0");
+          o.textContent = String(h).padStart(2, "0");
+          arrHour.appendChild(o);
+        }
+        for (let m = 0; m < 60; m++) {
+          const o = document.createElement("option");
+          o.value = String(m).padStart(2, "0");
+          o.textContent = String(m).padStart(2, "0");
+          arrMin.appendChild(o);
+        }
+      })();
+      function currentArrival() {
+        return arrHour.value + ":" + arrMin.value;
+      }
+      function setArrivalNow() {
+        const d = new Date();
+        arrHour.value = String(d.getHours()).padStart(2, "0");
+        arrMin.value = String(d.getMinutes()).padStart(2, "0");
+      }
+
+      (function initDate() {
+        const iso = new Date().toISOString().slice(0, 10);
+        $("date").value = iso;
+        $("date").min = iso;
+        setArrivalNow(); // mặc định = giờ hiện tại (VD 15:02)
+      })();
+
+      function currentType() {
+        const el = document.querySelector('input[name="type"]:checked');
+        return el ? el.value : "Đi trễ";
+      }
+      function syncTypeUI() {
+        const isLate = currentType() === "Đi trễ";
+        arrivalWrap.classList.toggle("hidden", !isLate);
+        // Nghỉ -> ô Ngày chiếm full chiều ngang cho gọn
+        $("dateWrap").classList.toggle("col-span-2", !isLate);
+        updateLateHint();
+      }
+      document
+        .querySelectorAll('input[name="type"]')
+        .forEach((r) => r.addEventListener("change", syncTypeUI));
+
+      function updateLateHint() {
+        if (currentType() !== "Đi trễ") {
+          lateHint.textContent = "";
+          return;
+        }
+        const [ph, pm] = PRACTICE_TIME.split(":").map(Number);
+        const [ah, am] = currentArrival().split(":").map(Number);
+        const diff = ah * 60 + am - (ph * 60 + pm);
+        if (diff <= 0) {
+          lateHint.textContent =
+            "✅ Đến trước/đúng giờ tập (18:30) — ghi trễ 0 phút.";
+          lateHint.className = "mt-1.5 text-xs text-green-600";
         } else {
-          showToast(data.message || 'Gửi thất bại.', false);
+          lateHint.textContent = "⏱ Trễ khoảng " + diff + " phút so với 18:30.";
+          lateHint.className = "mt-1.5 text-xs text-amber-600";
         }
-      } catch (err) {
-        showToast('Lỗi kết nối, thử lại sau.', false);
-      } finally {
-        setLoading(false);
       }
-    });
+      arrHour.addEventListener("change", updateLateHint);
+      arrMin.addEventListener("change", updateLateHint);
 
-    /* ---------- Stats ---------- */
-    (function initStatsControls() {
-      const now = new Date();
-      const mSel = $('statsMonth'), ySel = $('statsYear');
-      for (let m = 1; m <= 12; m++) {
-        const o = document.createElement('option');
-        o.value = m; o.textContent = 'Tháng ' + m;
-        if (m === now.getMonth() + 1) o.selected = true;
-        mSel.appendChild(o);
+      function setLoading(on) {
+        submitBtn.disabled = on;
+        $("spinner").classList.toggle("hidden", !on);
+        $("submitText").textContent = on ? "Đang gửi…" : "Gửi yêu cầu";
       }
-      const y = now.getFullYear();
-      for (let yr = y - 1; yr <= y + 1; yr++) {
-        const o = document.createElement('option');
-        o.value = yr; o.textContent = yr;
-        if (yr === y) o.selected = true;
-        ySel.appendChild(o);
-      }
-    })();
-    $('statsReload').addEventListener('click', loadStats);
 
-    async function loadStats() {
-      const m = $('statsMonth').value, y = $('statsYear').value;
-      const body = $('statsBody');
-      body.innerHTML = spinnerHTML('Đang tải thống kê…');
-      try {
-        const res = await fetch(API_URL + '?action=stats&month=' + m + '&year=' + y + '&pin=' + encodeURIComponent(getPin()));
-        const data = await res.json();
-        if (data.status !== 'success') {
-          if (/PIN/i.test(data.message || '')) { lockManager(); showToast('Phiên quản lý hết hạn, đăng nhập lại.', false); return; }
-          throw new Error(data.message);
+      async function loadMembers() {
+        try {
+          const res = await fetch(API_URL + "?action=members");
+          const data = await res.json();
+          MEMBERS =
+            data.status === "success" && data.members ? data.members : [];
+          fillMemberSelect(nameSel, "— Chọn tên —");
+          fillMemberSelect($("historyName"), "— Chọn tên —");
+          if (!MEMBERS.length)
+            nameSel.innerHTML =
+              '<option value="">(Chưa có thành viên trong Sheet)</option>';
+        } catch (e) {
+          nameSel.innerHTML =
+            '<option value="">Lỗi tải danh sách — thử lại</option>';
+          showToast("Không tải được danh sách thành viên.", false);
         }
-        renderStats(data.stats, m, y);
-        body.dataset.loaded = '1';
-      } catch (e) {
-        body.innerHTML = '<p class="text-red-600">Lỗi tải thống kê. Thử lại.</p>';
       }
-    }
-
-    function renderStats(stats, m, y) {
-      const body = $('statsBody');
-      const active = stats.filter((s) => s.late + s.off > 0);
-      const totLate = stats.reduce((a, s) => a + s.late, 0);
-      const totOff = stats.reduce((a, s) => a + s.off, 0);
-      const totMin = stats.reduce((a, s) => a + s.lateMinutes, 0);
-
-      let html =
-        '<div class="mb-3 grid grid-cols-3 gap-2">' +
-          statCard('Lượt trễ', totLate, 'text-amber-600') +
-          statCard('Lượt nghỉ', totOff, 'text-indigo-600') +
-          statCard('Tổng phút trễ', totMin, 'text-rose-600') +
-        '</div>';
-
-      if (!active.length) {
-        html += '<p class="rounded-xl bg-slate-50 py-6 text-center text-slate-400">Không có dữ liệu trong tháng ' + m + '/' + y + '.</p>';
-        body.innerHTML = html;
-        return;
+      function fillMemberSelect(sel, placeholder) {
+        sel.innerHTML = '<option value="">' + placeholder + "</option>";
+        MEMBERS.forEach((m) => {
+          const o = document.createElement("option");
+          o.value = m;
+          o.textContent = m;
+          sel.appendChild(o);
+        });
       }
 
-      html += '<div class="overflow-hidden rounded-xl border border-slate-200"><table class="w-full text-sm">' +
-        '<thead><tr class="bg-brand-700 text-white">' +
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const payload = {
+          name: nameSel.value.trim(),
+          type: currentType(),
+          date: $("date").value,
+          arrivalTime: currentType() === "Đi trễ" ? currentArrival() : "",
+          reason: $("reason").value.trim(),
+        };
+        if (!payload.name) return showToast("Vui lòng chọn thành viên.", false);
+        if (!payload.date) return showToast("Vui lòng chọn ngày.", false);
+        if (payload.type === "Đi trễ" && !payload.arrivalTime)
+          return showToast("Vui lòng chọn giờ đến.", false);
+        if (!payload.reason) return showToast("Vui lòng nhập lý do.", false);
+
+        setLoading(true);
+        try {
+          const res = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+          if (data.status === "success") {
+            showToast(data.message || "Đã gửi yêu cầu!", true);
+            form.reset();
+            document.querySelector(
+              'input[name="type"][value="Đi trễ"]',
+            ).checked = true;
+            setArrivalNow();
+            $("date").value = new Date().toISOString().slice(0, 10);
+            syncTypeUI();
+            $("statsBody").dataset.loaded = ""; // buộc thống kê tải lại
+          } else {
+            showToast(data.message || "Gửi thất bại.", false);
+          }
+        } catch (err) {
+          showToast("Lỗi kết nối, thử lại sau.", false);
+        } finally {
+          setLoading(false);
+        }
+      });
+
+      /* ---------- Stats ---------- */
+      (function initStatsControls() {
+        const now = new Date();
+        const mSel = $("statsMonth"),
+          ySel = $("statsYear");
+        for (let m = 1; m <= 12; m++) {
+          const o = document.createElement("option");
+          o.value = m;
+          o.textContent = "Tháng " + m;
+          if (m === now.getMonth() + 1) o.selected = true;
+          mSel.appendChild(o);
+        }
+        const y = now.getFullYear();
+        for (let yr = y - 1; yr <= y + 1; yr++) {
+          const o = document.createElement("option");
+          o.value = yr;
+          o.textContent = yr;
+          if (yr === y) o.selected = true;
+          ySel.appendChild(o);
+        }
+      })();
+      $("statsReload").addEventListener("click", loadStats);
+
+      async function loadStats() {
+        const m = $("statsMonth").value,
+          y = $("statsYear").value;
+        const body = $("statsBody");
+        body.innerHTML = spinnerHTML("Đang tải thống kê…");
+        try {
+          const res = await fetch(
+            API_URL +
+              "?action=stats&month=" +
+              m +
+              "&year=" +
+              y +
+              "&pin=" +
+              encodeURIComponent(getPin()),
+          );
+          const data = await res.json();
+          if (data.status !== "success") {
+            if (/PIN/i.test(data.message || "")) {
+              lockManager();
+              showToast("Phiên quản lý hết hạn, đăng nhập lại.", false);
+              return;
+            }
+            throw new Error(data.message);
+          }
+          renderStats(data.stats, m, y);
+          body.dataset.loaded = "1";
+        } catch (e) {
+          body.innerHTML =
+            '<p class="text-red-600">Lỗi tải thống kê. Thử lại.</p>';
+        }
+      }
+
+      function renderStats(stats, m, y) {
+        const body = $("statsBody");
+        const active = stats.filter((s) => s.late + s.off > 0);
+        const totLate = stats.reduce((a, s) => a + s.late, 0);
+        const totOff = stats.reduce((a, s) => a + s.off, 0);
+        const totMin = stats.reduce((a, s) => a + s.lateMinutes, 0);
+
+        let html =
+          '<div class="mb-3 grid grid-cols-3 gap-2">' +
+          statCard("Lượt trễ", totLate, "text-amber-600") +
+          statCard("Lượt nghỉ", totOff, "text-indigo-600") +
+          statCard("Tổng phút trễ", totMin, "text-rose-600") +
+          "</div>";
+
+        if (!active.length) {
+          html +=
+            '<p class="rounded-xl bg-slate-50 py-6 text-center text-slate-400">Không có dữ liệu trong tháng ' +
+            m +
+            "/" +
+            y +
+            ".</p>";
+          body.innerHTML = html;
+          return;
+        }
+
+        html +=
+          '<div class="overflow-hidden rounded-xl border border-slate-200"><table class="w-full text-sm">' +
+          '<thead><tr class="bg-brand-700 text-white">' +
           '<th class="px-3 py-2 text-left font-semibold">Tên</th>' +
           '<th class="px-2 py-2 text-center font-semibold">Trễ</th>' +
           '<th class="px-2 py-2 text-center font-semibold">Phút</th>' +
           '<th class="px-2 py-2 text-center font-semibold">Nghỉ</th>' +
-        '</tr></thead><tbody>';
-      active.forEach((s, i) => {
-        html += '<tr class="' + (i % 2 ? 'bg-slate-50' : 'bg-white') + '">' +
-          '<td class="px-3 py-2 font-medium text-slate-700">' + esc(s.name) + '</td>' +
-          '<td class="px-2 py-2 text-center">' + s.late + '</td>' +
-          '<td class="px-2 py-2 text-center text-rose-600">' + s.lateMinutes + '</td>' +
-          '<td class="px-2 py-2 text-center">' + s.off + '</td>' +
-        '</tr>';
-      });
-      html += '</tbody></table></div>';
-      body.innerHTML = html;
-    }
-    function statCard(label, val, color) {
-      return '<div class="rounded-xl bg-slate-50 px-2 py-3 text-center">' +
-        '<div class="text-2xl font-extrabold ' + color + '">' + val + '</div>' +
-        '<div class="mt-0.5 text-xs text-slate-500">' + label + '</div></div>';
-    }
-
-    /* ---------- Duyệt ---------- */
-    $('approveReload').addEventListener('click', loadPending);
-
-    async function loadPending() {
-      const body = $('approveBody');
-      body.innerHTML = spinnerHTML('Đang tải…');
-      try {
-        const res = await fetch(API_URL + '?action=pending&pin=' + encodeURIComponent(getPin()));
-        const data = await res.json();
-        if (data.status !== 'success') {
-          if (/PIN/i.test(data.message || '')) { lockManager(); showToast('Phiên hết hạn, đăng nhập lại.', false); return; }
-          throw new Error(data.message);
-        }
-        renderPending(data.items);
-      } catch (e) {
-        body.innerHTML = '<p class="text-red-600">Lỗi tải danh sách. Thử lại.</p>';
-      }
-    }
-
-    function renderPending(items) {
-      const body = $('approveBody');
-      if (!items.length) { body.innerHTML = '<p class="rounded-xl bg-slate-50 py-6 text-center text-slate-400">🎉 Không còn yêu cầu chờ duyệt.</p>'; return; }
-      body.innerHTML = items.map((it) => {
-        const typeBadge = it.type === 'Đi trễ'
-          ? '<span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">⏰ Đi trễ</span>'
-          : '<span class="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700">🚫 Nghỉ</span>';
-        const lateInfo = it.type === 'Đi trễ' && it.arrival
-          ? '<span class="text-slate-500">· đến ' + esc(it.arrival) + ' (trễ ' + it.lateMinutes + 'p)</span>' : '';
-        return '<div class="rounded-xl border border-slate-200 bg-white p-3">' +
-          '<div class="mb-1 flex items-center gap-2">' + typeBadge + '<span class="font-bold text-slate-800">' + esc(it.name) + '</span></div>' +
-          '<div class="text-xs text-slate-600"><span class="font-semibold text-slate-700">' + esc(it.date) + '</span> · ' + esc(it.reason) + ' ' + lateInfo + '</div>' +
-          '<div class="mt-1 text-[11px] text-slate-400">Gửi: ' + esc(it.timestamp) + '</div>' +
-          '<div class="mt-2 flex gap-2">' +
-            '<button data-sheet="' + esc(it.sheet) + '" data-row="' + it.row + '" data-act="approve" class="approve-act flex-1 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-green-700">✅ Duyệt</button>' +
-            '<button data-sheet="' + esc(it.sheet) + '" data-row="' + it.row + '" data-act="reject" class="approve-act flex-1 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700">❌ Từ chối</button>' +
-          '</div>' +
-        '</div>';
-      }).join('');
-
-      body.querySelectorAll('.approve-act').forEach((btn) => {
-        btn.addEventListener('click', () => decide(btn.dataset.sheet, btn.dataset.row, btn.dataset.act, btn));
-      });
-    }
-
-    async function decide(sheet, row, act, btn) {
-      // khoá cả 2 nút trong card
-      const card = btn.closest('.flex').parentElement;
-      card.querySelectorAll('.approve-act').forEach((b) => (b.disabled = true));
-      btn.textContent = '…';
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: act, pin: getPin(), sheet: sheet, row: row }),
+          "</tr></thead><tbody>";
+        active.forEach((s, i) => {
+          html +=
+            '<tr class="' +
+            (i % 2 ? "bg-slate-50" : "bg-white") +
+            '">' +
+            '<td class="px-3 py-2 font-medium text-slate-700">' +
+            esc(s.name) +
+            "</td>" +
+            '<td class="px-2 py-2 text-center">' +
+            s.late +
+            "</td>" +
+            '<td class="px-2 py-2 text-center text-rose-600">' +
+            s.lateMinutes +
+            "</td>" +
+            '<td class="px-2 py-2 text-center">' +
+            s.off +
+            "</td>" +
+            "</tr>";
         });
-        const data = await res.json();
-        if (data.status === 'success') {
-          showToast(data.message || 'Đã xử lý.', true);
-          $('statsBody').dataset.loaded = ''; // thống kê tải lại
+        html += "</tbody></table></div>";
+        body.innerHTML = html;
+      }
+      function statCard(label, val, color) {
+        return (
+          '<div class="rounded-xl bg-slate-50 px-2 py-3 text-center">' +
+          '<div class="text-2xl font-extrabold ' +
+          color +
+          '">' +
+          val +
+          "</div>" +
+          '<div class="mt-0.5 text-xs text-slate-500">' +
+          label +
+          "</div></div>"
+        );
+      }
+
+      /* ---------- Duyệt ---------- */
+      $("approveReload").addEventListener("click", loadPending);
+
+      async function loadPending() {
+        const body = $("approveBody");
+        body.innerHTML = spinnerHTML("Đang tải…");
+        try {
+          const res = await fetch(
+            API_URL + "?action=pending&pin=" + encodeURIComponent(getPin()),
+          );
+          const data = await res.json();
+          if (data.status !== "success") {
+            if (/PIN/i.test(data.message || "")) {
+              lockManager();
+              showToast("Phiên hết hạn, đăng nhập lại.", false);
+              return;
+            }
+            throw new Error(data.message);
+          }
+          renderPending(data.items);
+        } catch (e) {
+          body.innerHTML =
+            '<p class="text-red-600">Lỗi tải danh sách. Thử lại.</p>';
+        }
+      }
+
+      function renderPending(items) {
+        const body = $("approveBody");
+        if (!items.length) {
+          body.innerHTML =
+            '<p class="rounded-xl bg-slate-50 py-6 text-center text-slate-400">🎉 Không còn yêu cầu chờ duyệt.</p>';
+          return;
+        }
+        body.innerHTML = items
+          .map((it) => {
+            const typeBadge =
+              it.type === "Đi trễ"
+                ? '<span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">⏰ Đi trễ</span>'
+                : '<span class="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700">🚫 Nghỉ</span>';
+            const lateInfo =
+              it.type === "Đi trễ" && it.arrival
+                ? '<span class="text-slate-500">· đến ' +
+                  esc(it.arrival) +
+                  " (trễ " +
+                  it.lateMinutes +
+                  "p)</span>"
+                : "";
+            return (
+              '<div class="pending-card rounded-xl border border-slate-200 bg-white p-3 transition-all duration-200">' +
+              '<div class="mb-1 flex items-center gap-2">' +
+              typeBadge +
+              '<span class="font-bold text-slate-800">' +
+              esc(it.name) +
+              "</span></div>" +
+              '<div class="text-xs text-slate-600"><span class="font-semibold text-slate-700">' +
+              esc(it.date) +
+              "</span> · " +
+              esc(it.reason) +
+              " " +
+              lateInfo +
+              "</div>" +
+              '<div class="mt-1 text-[11px] text-slate-400">Gửi: ' +
+              esc(it.timestamp) +
+              "</div>" +
+              '<div class="mt-2 flex gap-2">' +
+              '<button data-sheet="' + esc(it.sheet) + '" data-row="' + it.row + '" data-name="' + esc(it.name) +
+              '" data-act="approve" class="approve-act flex-1 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-green-700 active:scale-95">✅ Duyệt</button>' +
+              '<button data-sheet="' + esc(it.sheet) + '" data-row="' + it.row + '" data-name="' + esc(it.name) +
+              '" data-act="reject" class="approve-act flex-1 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700 active:scale-95">❌ Từ chối</button>' +
+              "</div>" +
+              "</div>"
+            );
+          })
+          .join("");
+
+        body.querySelectorAll(".approve-act").forEach((btn) => {
+          btn.addEventListener("click", () =>
+            decide(btn.dataset.sheet, btn.dataset.row, btn.dataset.act, btn.dataset.name, btn),
+          );
+        });
+      }
+
+      // Modal ghi chú -> trả Promise: chuỗi ghi chú, hoặc null nếu Huỷ
+      let noteResolve = null;
+      function askNote(act, name) {
+        return new Promise((resolve) => {
+          noteResolve = resolve;
+          const isReject = act === "reject";
+          $("noteTitle").textContent =
+            (isReject ? "❌ Từ chối: " : "✅ Duyệt: ") + name;
+          $("noteReq").classList.toggle("hidden", !isReject);
+          $("noteInput").value = "";
+          $("noteInput").placeholder = isReject
+            ? "Lý do từ chối (bắt buộc)…"
+            : "Ghi chú (không bắt buộc)…";
+          $("noteErr").classList.add("hidden");
+          const confirmBtn = $("noteConfirm");
+          confirmBtn.className =
+            "flex-1 rounded-xl px-4 py-2.5 text-sm font-bold text-white transition " +
+            (isReject ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700");
+          $("noteModal").dataset.act = act;
+          $("noteModal").classList.remove("hidden");
+          $("noteModal").classList.add("flex");
+          setTimeout(() => $("noteInput").focus(), 50);
+        });
+      }
+      function closeNoteModal() {
+        $("noteModal").classList.add("hidden");
+        $("noteModal").classList.remove("flex");
+      }
+      $("noteCancel").addEventListener("click", () => {
+        closeNoteModal();
+        if (noteResolve) { noteResolve(null); noteResolve = null; }
+      });
+      $("noteConfirm").addEventListener("click", () => {
+        const isReject = $("noteModal").dataset.act === "reject";
+        const v = $("noteInput").value.trim();
+        if (isReject && !v) {
+          $("noteErr").textContent = "Vui lòng nhập lý do từ chối.";
+          $("noteErr").classList.remove("hidden");
+          return;
+        }
+        closeNoteModal();
+        if (noteResolve) { noteResolve(v); noteResolve = null; }
+      });
+
+      async function decide(sheet, row, act, name, btn) {
+        const note = await askNote(act, name);
+        if (note === null) return; // Huỷ
+
+        const body = $("approveBody");
+        const card = btn.closest(".pending-card");
+        // Optimistic: ẩn card ngay cho mượt, không chờ tải lại cả danh sách
+        card.querySelectorAll(".approve-act").forEach((b) => (b.disabled = true));
+        card.style.opacity = "0";
+        card.style.transform = "translateX(24px)";
+        card.style.pointerEvents = "none";
+        setTimeout(() => {
+          card.remove();
+          if (!body.querySelector(".pending-card")) renderPending([]);
+        }, 200);
+
+        try {
+          const res = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: act, pin: getPin(), sheet: sheet, row: row, note: note }),
+          });
+          const data = await res.json();
+          if (data.status === "success") {
+            showToast(act === "approve" ? "✅ Đã duyệt " + name : "❌ Đã từ chối " + name, true);
+            $("statsBody").dataset.loaded = ""; // thống kê cần tải lại
+          } else {
+            if (/PIN/i.test(data.message || "")) {
+              lockManager();
+              showToast("Phiên hết hạn, đăng nhập lại.", false);
+            } else {
+              showToast(data.message || "Thất bại — tải lại.", false);
+              loadPending(); // khôi phục trạng thái thật
+            }
+          }
+        } catch (e) {
+          showToast("Lỗi kết nối — tải lại.", false);
           loadPending();
+        }
+      }
+
+      /* ---------- History ---------- */
+      $("historyReload").addEventListener("click", loadHistory);
+      $("historyName").addEventListener("change", loadHistory);
+
+      async function loadHistory() {
+        const name = $("historyName").value;
+        const body = $("historyBody");
+        if (!name) {
+          body.innerHTML = "Chọn tên để xem lịch sử.";
+          return;
+        }
+        body.innerHTML = spinnerHTML("Đang tải…");
+        try {
+          const res = await fetch(
+            API_URL +
+              "?action=history&name=" +
+              encodeURIComponent(name) +
+              "&pin=" +
+              encodeURIComponent(getPin()),
+          );
+          const data = await res.json();
+          if (data.status !== "success") {
+            if (/PIN/i.test(data.message || "")) {
+              lockManager();
+              showToast("Phiên quản lý hết hạn, đăng nhập lại.", false);
+              return;
+            }
+            throw new Error(data.message);
+          }
+          renderHistory(data.history);
+        } catch (e) {
+          body.innerHTML =
+            '<p class="text-red-600">Lỗi tải lịch sử. Thử lại.</p>';
+        }
+      }
+
+      function renderHistory(items) {
+        const body = $("historyBody");
+        if (!items.length) {
+          body.innerHTML =
+            '<p class="rounded-xl bg-slate-50 py-6 text-center text-slate-400">Chưa có yêu cầu nào.</p>';
+          return;
+        }
+        body.innerHTML = items
+          .map((it) => {
+            const typeBadge =
+              it.type === "Đi trễ"
+                ? '<span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">⏰ Đi trễ</span>'
+                : '<span class="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700">🚫 Nghỉ</span>';
+            const statusBadge = badgeStatus(it.status);
+            const lateInfo =
+              it.type === "Đi trễ" && it.arrival
+                ? '<span class="text-slate-500">· đến ' +
+                  esc(it.arrival) +
+                  " (trễ " +
+                  it.lateMinutes +
+                  "p)</span>"
+                : "";
+            const noteInfo = it.note
+              ? '<div class="mt-1 rounded-lg bg-slate-50 px-2 py-1 text-[11px] text-slate-600">📝 ' +
+                esc(it.note) +
+                "</div>"
+              : "";
+            return (
+              '<div class="rounded-xl border border-slate-200 bg-white p-3">' +
+              '<div class="mb-1 flex items-center justify-between gap-2">' +
+              '<div class="flex items-center gap-2">' +
+              typeBadge +
+              '<span class="font-semibold text-slate-700">' +
+              esc(it.date) +
+              "</span></div>" +
+              statusBadge +
+              "</div>" +
+              '<div class="text-xs text-slate-600">' +
+              esc(it.reason) +
+              " " +
+              lateInfo +
+              "</div>" +
+              noteInfo +
+              '<div class="mt-1 text-[11px] text-slate-400">Gửi: ' +
+              esc(it.timestamp) +
+              "</div>" +
+              "</div>"
+            );
+          })
+          .join("");
+      }
+      function badgeStatus(s) {
+        const map = {
+          "Đã duyệt": "bg-green-100 text-green-700",
+          "Từ chối": "bg-red-100 text-red-700",
+          "Chờ duyệt": "bg-yellow-100 text-yellow-700",
+        };
+        const cls = map[s] || "bg-slate-100 text-slate-600";
+        return (
+          '<span class="rounded-full px-2 py-0.5 text-xs font-semibold ' +
+          cls +
+          '">' +
+          esc(s) +
+          "</span>"
+        );
+      }
+
+      /* ---------- Hình nền ---------- */
+      function applyBackground(url) {
+        const layer = $("bgLayer");
+        if (url) {
+          // Lớp phủ RẤT nhẹ, chỉ để dịu chút; ảnh hiện gần như nguyên bản
+          layer.style.backgroundImage =
+            'linear-gradient(rgba(255,255,255,.12), rgba(255,255,255,.22)), url("' +
+            url +
+            '")';
         } else {
-          if (/PIN/i.test(data.message || '')) { lockManager(); showToast('Phiên hết hạn, đăng nhập lại.', false); }
-          else { showToast(data.message || 'Thất bại.', false); loadPending(); }
+          layer.style.backgroundImage = "";
         }
-      } catch (e) {
-        showToast('Lỗi kết nối.', false);
-        card.querySelectorAll('.approve-act').forEach((b) => (b.disabled = false));
       }
-    }
-
-    /* ---------- History ---------- */
-    $('historyReload').addEventListener('click', loadHistory);
-    $('historyName').addEventListener('change', loadHistory);
-
-    async function loadHistory() {
-      const name = $('historyName').value;
-      const body = $('historyBody');
-      if (!name) { body.innerHTML = 'Chọn tên để xem lịch sử.'; return; }
-      body.innerHTML = spinnerHTML('Đang tải…');
-      try {
-        const res = await fetch(API_URL + '?action=history&name=' + encodeURIComponent(name) + '&pin=' + encodeURIComponent(getPin()));
-        const data = await res.json();
-        if (data.status !== 'success') {
-          if (/PIN/i.test(data.message || '')) { lockManager(); showToast('Phiên quản lý hết hạn, đăng nhập lại.', false); return; }
-          throw new Error(data.message);
+      async function loadConfig() {
+        try {
+          const res = await fetch(API_URL + "?action=config");
+          const data = await res.json();
+          if (data.status === "success") {
+            applyBackground(data.bgUrl);
+            $("bgUrlInput").value = data.bgUrl || "";
+          }
+        } catch (e) {
+          /* bỏ qua, giữ nền mặc định */
         }
-        renderHistory(data.history);
-      } catch (e) {
-        body.innerHTML = '<p class="text-red-600">Lỗi tải lịch sử. Thử lại.</p>';
       }
-    }
-
-    function renderHistory(items) {
-      const body = $('historyBody');
-      if (!items.length) { body.innerHTML = '<p class="rounded-xl bg-slate-50 py-6 text-center text-slate-400">Chưa có yêu cầu nào.</p>'; return; }
-      body.innerHTML = items.map((it) => {
-        const typeBadge = it.type === 'Đi trễ'
-          ? '<span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">⏰ Đi trễ</span>'
-          : '<span class="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700">🚫 Nghỉ</span>';
-        const statusBadge = badgeStatus(it.status);
-        const lateInfo = it.type === 'Đi trễ' && it.arrival
-          ? '<span class="text-slate-500">· đến ' + esc(it.arrival) + ' (trễ ' + it.lateMinutes + 'p)</span>' : '';
-        return '<div class="rounded-xl border border-slate-200 bg-white p-3">' +
-          '<div class="mb-1 flex items-center justify-between gap-2">' +
-            '<div class="flex items-center gap-2">' + typeBadge + '<span class="font-semibold text-slate-700">' + esc(it.date) + '</span></div>' +
-            statusBadge +
-          '</div>' +
-          '<div class="text-xs text-slate-600">' + esc(it.reason) + ' ' + lateInfo + '</div>' +
-          '<div class="mt-1 text-[11px] text-slate-400">Gửi: ' + esc(it.timestamp) + '</div>' +
-        '</div>';
-      }).join('');
-    }
-    function badgeStatus(s) {
-      const map = {
-        'Đã duyệt': 'bg-green-100 text-green-700',
-        'Từ chối': 'bg-red-100 text-red-700',
-        'Chờ duyệt': 'bg-yellow-100 text-yellow-700',
-      };
-      const cls = map[s] || 'bg-slate-100 text-slate-600';
-      return '<span class="rounded-full px-2 py-0.5 text-xs font-semibold ' + cls + '">' + esc(s) + '</span>';
-    }
-
-    /* ---------- Hình nền ---------- */
-    function applyBackground(url) {
-      const layer = $('bgLayer');
-      if (url) {
-        // Lớp phủ mờ trắng-xanh để chữ/card vẫn đọc rõ; ảnh nằm trong cột mobile
-        layer.style.backgroundImage =
-          'linear-gradient(rgba(239,246,255,.80), rgba(219,234,254,.88)), url("' + url + '")';
-      } else {
-        layer.style.backgroundImage = '';
-      }
-    }
-    async function loadConfig() {
-      try {
-        const res = await fetch(API_URL + '?action=config');
-        const data = await res.json();
-        if (data.status === 'success') {
-          applyBackground(data.bgUrl);
-          $('bgUrlInput').value = data.bgUrl || '';
+      async function saveBackground(url) {
+        $("bgSave").disabled = true;
+        $("bgSave").textContent = "…";
+        try {
+          const res = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({
+              action: "setBackground",
+              pin: getPin(),
+              bgUrl: url,
+            }),
+          });
+          const data = await res.json();
+          if (data.status === "success") {
+            applyBackground(url);
+            $("bgUrlInput").value = url;
+            showToast(data.message || "Đã lưu.", true);
+          } else {
+            if (/PIN/i.test(data.message || "")) {
+              lockManager();
+              showToast("Phiên hết hạn, đăng nhập lại.", false);
+            } else showToast(data.message || "Lưu thất bại.", false);
+          }
+        } catch (e) {
+          showToast("Lỗi kết nối.", false);
+        } finally {
+          $("bgSave").disabled = false;
+          $("bgSave").textContent = "Lưu";
         }
-      } catch (e) { /* bỏ qua, giữ nền mặc định */ }
-    }
-    async function saveBackground(url) {
-      $('bgSave').disabled = true; $('bgSave').textContent = '…';
-      try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'setBackground', pin: getPin(), bgUrl: url }),
-        });
-        const data = await res.json();
-        if (data.status === 'success') {
-          applyBackground(url);
-          $('bgUrlInput').value = url;
-          showToast(data.message || 'Đã lưu.', true);
-        } else {
-          if (/PIN/i.test(data.message || '')) { lockManager(); showToast('Phiên hết hạn, đăng nhập lại.', false); }
-          else showToast(data.message || 'Lưu thất bại.', false);
-        }
-      } catch (e) {
-        showToast('Lỗi kết nối.', false);
-      } finally {
-        $('bgSave').disabled = false; $('bgSave').textContent = 'Lưu';
       }
-    }
-    $('bgSave').addEventListener('click', () => {
-      const url = $('bgUrlInput').value.trim();
-      if (!url) return showToast('Nhập link ảnh.', false);
-      if (!/^https?:\/\//i.test(url)) return showToast('Link phải bắt đầu http/https.', false);
-      saveBackground(url);
-    });
-    $('bgReset').addEventListener('click', () => saveBackground(''));
+      $("bgSave").addEventListener("click", () => {
+        const url = $("bgUrlInput").value.trim();
+        if (!url) return showToast("Nhập link ảnh.", false);
+        if (!/^https?:\/\//i.test(url))
+          return showToast("Link phải bắt đầu http/https.", false);
+        saveBackground(url);
+      });
+      $("bgReset").addEventListener("click", () => saveBackground(""));
 
-    /* ---------- Utils ---------- */
-    function esc(s) {
-      return String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
-        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    }
-    function spinnerHTML(text) {
-      return '<div class="flex items-center justify-center gap-2 py-6 text-slate-400">' +
-        '<svg class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z"></path></svg>' + text + '</div>';
-    }
+      /* ---------- Utils ---------- */
+      function esc(s) {
+        return String(s == null ? "" : s).replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      }
+      function spinnerHTML(text) {
+        return (
+          '<div class="flex items-center justify-center gap-2 py-6 text-slate-400">' +
+          '<svg class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z"></path></svg>' +
+          text +
+          "</div>"
+        );
+      }
 
-    /* ---------- Init ---------- */
-    (function initLogo() {
-      if (LOGO_URL) $('logoBadge').innerHTML =
-        '<img src="' + LOGO_URL + '" alt="LTS" class="h-full w-full object-cover" onerror="this.parentElement.innerHTML=\'<span class=&quot;text-lg font-extrabold text-brand-700&quot;>LTS</span>\'">';
-    })();
-    activateTab('form');
-    loadMembers();
-    loadConfig();
-    syncTypeUI();
+      /* ---------- Init ---------- */
+      (function initLogo() {
+        if (LOGO_URL)
+          $("logoBadge").innerHTML =
+            '<img src="' +
+            LOGO_URL +
+            '" alt="LTS" class="h-full w-full object-cover" onerror="this.parentElement.innerHTML=\'<span class=&quot;text-lg font-extrabold text-brand-700&quot;>LTS</span>\'">';
+      })();
+      activateTab("form");
+      loadMembers();
+      loadConfig();
+      syncTypeUI();
 
-    // Nếu PIN còn trong session (đã đăng nhập trước đó) -> mở lại khu quản lý
-    (async function restoreManager() {
-      if (!getPin()) return;
-      try {
-        const res = await fetch(API_URL + '?action=login&pin=' + encodeURIComponent(getPin()));
-        const data = await res.json();
-        if (data.status === 'success') unlockManager(data.sheetUrl);
-        else sessionStorage.removeItem('lts_pin');
-      } catch (e) { /* offline -> giữ nguyên, thử lại lần sau */ }
-    })();
-  </script>
-</body>
+      // Nếu PIN còn trong session (đã đăng nhập trước đó) -> mở lại khu quản lý
+      (async function restoreManager() {
+        if (!getPin()) return;
+        try {
+          const res = await fetch(
+            API_URL + "?action=login&pin=" + encodeURIComponent(getPin()),
+          );
+          const data = await res.json();
+          if (data.status === "success") unlockManager(data.sheetUrl);
+          else sessionStorage.removeItem("lts_pin");
+        } catch (e) {
+          /* offline -> giữ nguyên, thử lại lần sau */
+        }
+      })();
+    </script>
+  </body>
 </html>

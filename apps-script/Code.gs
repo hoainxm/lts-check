@@ -30,8 +30,8 @@ const CONFIG = {
   COLOR_HEADER_TEXT: '#ffffff',
 };
 
-// Cột trong sheet tháng (1-based)
-const COL = { TS: 1, NAME: 2, TYPE: 3, DATE: 4, ARRIVAL: 5, LATE: 6, REASON: 7, STATUS: 8 };
+// Cột trong sheet tháng (1-based). Thời gian gửi tách 2 cột: Ngày gửi + Giờ gửi.
+const COL = { TS_DATE: 1, TS_TIME: 2, NAME: 3, TYPE: 4, DATE: 5, ARRIVAL: 6, LATE: 7, REASON: 8, STATUS: 9, NOTE: 10 };
 const MONTH_RE = /^(0[1-9]|1[0-2])\/\d{4}$/;
 
 /* ============================================================
@@ -99,8 +99,12 @@ function doPost(e) {
       const sheet = SpreadsheetApp.getActive().getSheetByName(sheetName);
       if (!sheet || !MONTH_RE.test(sheetName) || !(row >= 2 && row <= sheet.getLastRow()))
         return jsonResponse({ status: 'error', message: 'Yêu cầu không còn tồn tại. Tải lại.' });
+      const note = String(body.note || '').trim();
+      if (body.action === 'reject' && !note)
+        return jsonResponse({ status: 'error', message: 'Cần nhập lý do từ chối.' });
       const newStatus = body.action === 'approve' ? 'Đã duyệt' : 'Từ chối';
       sheet.getRange(row, COL.STATUS).setValue(newStatus);
+      sheet.getRange(row, COL.NOTE).setValue(note);
       try { refreshSummary_(); } catch (ignore) {}
       return jsonResponse({ status: 'success', message: body.action === 'approve' ? 'Đã duyệt.' : 'Đã từ chối.' });
     }
@@ -134,7 +138,9 @@ function doPost(e) {
     if (isDuplicate_(sheet, name, type, appliedDate))
       return jsonResponse({ status: 'error', message: 'Bạn đã gửi yêu cầu "' + type + '" cho ngày này rồi.' });
 
-    sheet.appendRow([new Date(), name, type, appliedDate, arrivalDisplay, lateMinutes, reason, 'Chờ duyệt']);
+    const now = new Date();
+    // Cột 1 = ngày gửi, cột 2 = giờ gửi (cùng thời điểm, format khác nhau khi hiển thị)
+    sheet.appendRow([now, now, name, type, appliedDate, arrivalDisplay, lateMinutes, reason, 'Chờ duyệt']);
 
     try { notify_({ name: name, type: type, dateStr: dateStr, arrivalTime: arrivalDisplay, lateMinutes: lateMinutes, reason: reason }); }
     catch (ignore) {}
@@ -203,8 +209,8 @@ function getPendingList_() {
       out.push({
         sheet: sh.getName(),
         row: i + 2,
-        tsRaw: r[COL.TS - 1] instanceof Date ? r[COL.TS - 1].getTime() : 0,
-        timestamp: r[COL.TS - 1] instanceof Date ? formatDT_(r[COL.TS - 1]) : '',
+        tsRaw: r[COL.TS_DATE - 1] instanceof Date ? r[COL.TS_DATE - 1].getTime() : 0,
+        timestamp: r[COL.TS_DATE - 1] instanceof Date ? formatDT_(r[COL.TS_DATE - 1]) : '',
         name: String(r[COL.NAME - 1]).trim(),
         type: String(r[COL.TYPE - 1]).trim(),
         date: r[COL.DATE - 1] instanceof Date ? formatD_(r[COL.DATE - 1]) : '',
@@ -245,18 +251,19 @@ function getHistory_(name, limit) {
   const all = [];
   listMonthSheets_().forEach(function (sh) {
     if (sh.getLastRow() < 2) return;
-    const rows = sh.getRange(2, 1, sh.getLastRow() - 1, COL.STATUS).getValues();
+    const rows = sh.getRange(2, 1, sh.getLastRow() - 1, COL.NOTE).getValues();
     rows.forEach(function (r) {
       if (String(r[COL.NAME - 1]).trim() !== name) return;
       all.push({
-        tsRaw: r[COL.TS - 1] instanceof Date ? r[COL.TS - 1].getTime() : 0,
-        timestamp: r[COL.TS - 1] instanceof Date ? formatDT_(r[COL.TS - 1]) : '',
+        tsRaw: r[COL.TS_DATE - 1] instanceof Date ? r[COL.TS_DATE - 1].getTime() : 0,
+        timestamp: r[COL.TS_DATE - 1] instanceof Date ? formatDT_(r[COL.TS_DATE - 1]) : '',
         type: String(r[COL.TYPE - 1]).trim(),
         date: r[COL.DATE - 1] instanceof Date ? formatD_(r[COL.DATE - 1]) : '',
         arrival: formatArrival_(r[COL.ARRIVAL - 1]),
         lateMinutes: r[COL.LATE - 1] === '' ? '' : Number(r[COL.LATE - 1]),
         reason: String(r[COL.REASON - 1] || ''),
         status: String(r[COL.STATUS - 1]).trim(),
+        note: String(r[COL.NOTE - 1] || ''),
       });
     });
   });
@@ -385,25 +392,27 @@ function styleHeader_(range, bg) {
 }
 
 function formatMonthSheet_(sheet) {
-  const headers = ['Thời gian gửi', 'Tên', 'Loại', 'Ngày áp dụng', 'Giờ đến dự kiến', 'Số phút trễ', 'Lý do', 'Trạng thái'];
+  const headers = ['Ngày gửi', 'Giờ gửi', 'Tên', 'Loại', 'Ngày áp dụng', 'Giờ đến dự kiến', 'Số phút trễ', 'Lý do', 'Trạng thái', 'Ghi chú (duyệt/từ chối)'];
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   styleHeader_(sheet.getRange(1, 1, 1, headers.length));
   sheet.setRowHeight(1, 36);
   sheet.setFrozenRows(1);
 
-  const widths = [160, 160, 90, 120, 130, 110, 280, 110];
+  const widths = [110, 90, 150, 90, 120, 130, 100, 260, 110, 240];
   widths.forEach(function (w, i) { sheet.setColumnWidth(i + 1, w); });
 
   const maxRows = sheet.getMaxRows();
-  sheet.getRange(2, 1, maxRows - 1, 1).setNumberFormat('dd/MM/yyyy HH:mm');
-  sheet.getRange(2, 4, maxRows - 1, 1).setNumberFormat('dd/MM/yyyy');
-  sheet.getRange(2, 5, maxRows - 1, 1).setNumberFormat('@'); // giờ đến = text
+  sheet.getRange(2, COL.TS_DATE, maxRows - 1, 1).setNumberFormat('dd/MM/yyyy');
+  sheet.getRange(2, COL.TS_TIME, maxRows - 1, 1).setNumberFormat('HH:mm:ss');
+  sheet.getRange(2, COL.DATE, maxRows - 1, 1).setNumberFormat('dd/MM/yyyy');
+  sheet.getRange(2, COL.ARRIVAL, maxRows - 1, 1).setNumberFormat('@'); // giờ đến = text
   sheet.getRange(2, 1, maxRows - 1, headers.length).setVerticalAlignment('middle');
-  sheet.getRange(2, 3, maxRows - 1, 1).setHorizontalAlignment('center');
-  sheet.getRange(2, 5, maxRows - 1, 2).setHorizontalAlignment('center');
-  sheet.getRange(2, 8, maxRows - 1, 1).setHorizontalAlignment('center');
+  sheet.getRange(2, COL.TS_DATE, maxRows - 1, 2).setHorizontalAlignment('center');
+  sheet.getRange(2, COL.TYPE, maxRows - 1, 1).setHorizontalAlignment('center');
+  sheet.getRange(2, COL.DATE, maxRows - 1, 3).setHorizontalAlignment('center');
+  sheet.getRange(2, COL.STATUS, maxRows - 1, 1).setHorizontalAlignment('center');
 
-  const statusRange = sheet.getRange(2, 8, maxRows - 1, 1);
+  const statusRange = sheet.getRange(2, COL.STATUS, maxRows - 1, 1);
   statusRange.setDataValidation(SpreadsheetApp.newDataValidation()
     .requireValueInList(CONFIG.STATUSES, true).setAllowInvalid(true).build());
 
@@ -411,8 +420,8 @@ function formatMonthSheet_(sheet) {
     ruleTextEq_(statusRange, 'Chờ duyệt', '#fef9c3'),
     ruleTextEq_(statusRange, 'Đã duyệt', '#dcfce7'),
     ruleTextEq_(statusRange, 'Từ chối', '#fee2e2'),
-    ruleTextEq_(sheet.getRange(2, 3, maxRows - 1, 1), 'Đi trễ', '#ffedd5'),
-    ruleTextEq_(sheet.getRange(2, 3, maxRows - 1, 1), 'Nghỉ', '#e0e7ff'),
+    ruleTextEq_(sheet.getRange(2, COL.TYPE, maxRows - 1, 1), 'Đi trễ', '#ffedd5'),
+    ruleTextEq_(sheet.getRange(2, COL.TYPE, maxRows - 1, 1), 'Nghỉ', '#e0e7ff'),
   ]);
 
   sheet.getBandings().forEach(function (b) { b.remove(); });
