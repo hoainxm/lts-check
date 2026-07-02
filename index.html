@@ -41,7 +41,10 @@
   <div class="mx-auto flex min-h-screen max-w-lg flex-col px-4 py-6 sm:py-10">
 
     <!-- Header -->
-    <header class="mb-5 text-center">
+    <header class="relative mb-5 text-center">
+      <!-- Nút vào khu quản lý (góc trên phải) -->
+      <button id="adminGear" title="Khu quản lý"
+        class="absolute right-0 top-0 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-lg shadow ring-1 ring-slate-200 transition hover:bg-brand-50 hover:ring-brand-300">🔒</button>
       <div class="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-700 shadow-lg shadow-brand-700/30">
         <span class="text-2xl font-extrabold tracking-tight text-white">LTS</span>
       </div>
@@ -50,10 +53,11 @@
     </header>
 
     <!-- Tabs -->
-    <nav class="mb-5 grid grid-cols-3 gap-1 rounded-2xl bg-white/70 p-1 shadow-sm ring-1 ring-slate-200">
+    <nav id="tabNav" class="mb-5 grid grid-cols-1 gap-1 rounded-2xl bg-white/70 p-1 shadow-sm ring-1 ring-slate-200">
       <button data-tab="form" class="tab-btn rounded-xl px-3 py-2.5 text-sm font-semibold transition">📝 Gửi</button>
-      <button data-tab="stats" class="tab-btn rounded-xl px-3 py-2.5 text-sm font-semibold transition">📊 Thống kê</button>
-      <button data-tab="history" class="tab-btn rounded-xl px-3 py-2.5 text-sm font-semibold transition">🕘 Lịch sử</button>
+      <button data-tab="approve" class="tab-btn hidden rounded-xl px-3 py-2.5 text-sm font-semibold transition">✅ Duyệt</button>
+      <button data-tab="stats" class="tab-btn hidden rounded-xl px-3 py-2.5 text-sm font-semibold transition">📊 Thống kê</button>
+      <button data-tab="history" class="tab-btn hidden rounded-xl px-3 py-2.5 text-sm font-semibold transition">🕘 Lịch sử</button>
     </nav>
 
     <main class="flex-1">
@@ -88,6 +92,7 @@
               <label for="date" class="mb-1.5 block text-sm font-semibold text-slate-700">Ngày áp dụng <span class="text-red-500">*</span></label>
               <input type="date" id="date" required
                 class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100" />
+              <p id="dateDisplay" class="mt-1.5 text-xs text-slate-500"></p>
             </div>
 
             <div id="arrivalWrap">
@@ -115,8 +120,36 @@
         </div>
       </section>
 
+      <!-- ========== TAB: APPROVE ========== -->
+      <section id="panel-approve" class="tab-panel">
+        <div class="rounded-3xl border border-slate-200/70 bg-white/90 p-5 shadow-xl shadow-slate-200/60 backdrop-blur sm:p-6">
+          <div class="mb-4 flex items-center gap-2">
+            <select id="approveFilter" class="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100">
+              <option value="Chờ duyệt">⏳ Chờ duyệt</option>
+              <option value="Đã duyệt">✅ Đã duyệt</option>
+              <option value="Từ chối">❌ Từ chối</option>
+              <option value="all">📋 Tất cả</option>
+            </select>
+            <button id="approveReload" class="rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-800">Tải</button>
+          </div>
+          <div id="approveBody" class="space-y-3 text-sm text-slate-500">Đang tải…</div>
+        </div>
+      </section>
+
       <!-- ========== TAB: STATS ========== -->
       <section id="panel-stats" class="tab-panel">
+        <!-- Đổi hình nền (admin) -->
+        <div class="mb-4 rounded-3xl border border-slate-200/70 bg-white/90 p-5 shadow-xl shadow-slate-200/60 backdrop-blur sm:p-6">
+          <h3 class="mb-1 text-sm font-bold text-slate-800">🎨 Đổi hình nền web</h3>
+          <p class="mb-3 text-xs text-slate-500">Dán link ảnh (http/https). Áp dụng cho tất cả mọi người.</p>
+          <div class="flex gap-2">
+            <input id="bgUrlInput" type="url" placeholder="https://…/anh.jpg"
+              class="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100" />
+            <button id="bgSave" class="rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-800 disabled:opacity-70">Lưu</button>
+            <button id="bgReset" class="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">Xoá</button>
+          </div>
+        </div>
+
         <div class="rounded-3xl border border-slate-200/70 bg-white/90 p-5 shadow-xl shadow-slate-200/60 backdrop-blur sm:p-6">
           <div class="mb-4 flex items-center gap-2">
             <select id="statsMonth" class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100"></select>
@@ -146,7 +179,28 @@
 
     </main>
 
-    <footer class="mt-6 text-center text-xs text-slate-400">Team LTS · Dữ liệu lưu về Google Sheet</footer>
+    <footer class="mt-6 text-center text-xs text-slate-400">
+      <p>Team LTS · Dữ liệu lưu về Google Sheet</p>
+      <button id="managerBtn" class="mt-2 font-semibold text-slate-400 underline decoration-dotted transition hover:text-brand-600">🔒 Khu quản lý</button>
+      <button id="logoutBtn" class="mt-2 hidden font-semibold text-red-400 underline decoration-dotted transition hover:text-red-600">🚪 Thoát quản lý</button>
+    </footer>
+  </div>
+
+  <!-- Modal PIN -->
+  <div id="pinModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 px-4 backdrop-blur-sm">
+    <div class="w-full max-w-xs rounded-3xl bg-white p-6 shadow-2xl">
+      <h3 class="mb-1 text-lg font-bold text-slate-900">🔒 Đăng nhập quản lý</h3>
+      <p class="mb-4 text-xs text-slate-500">Nhập mã PIN để xem thống kê & lịch sử.</p>
+      <form id="pinForm">
+        <input id="pinInput" type="password" inputmode="numeric" autocomplete="off" placeholder="Mã PIN"
+          class="w-full rounded-xl border border-slate-300 px-4 py-3 text-center text-lg tracking-widest outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100" />
+        <p id="pinError" class="mt-2 hidden text-center text-xs font-semibold text-red-600"></p>
+        <div class="mt-4 flex gap-2">
+          <button type="button" id="pinCancel" class="flex-1 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">Huỷ</button>
+          <button type="submit" id="pinSubmit" class="flex-1 rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-brand-800 disabled:opacity-70">Vào</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <!-- Toast -->
@@ -161,9 +215,86 @@
     const $ = (id) => document.getElementById(id);
     let MEMBERS = [];
 
+    /* ---------- Quản lý (PIN) ---------- */
+    const getPin = () => sessionStorage.getItem('lts_pin') || '';
+    const isManager = () => !!getPin();
+
+    function unlockManager(sheetUrl) {
+      document.querySelectorAll('.tab-btn.hidden').forEach((b) => b.classList.remove('hidden'));
+      $('tabNav').classList.remove('grid-cols-1');
+      $('tabNav').classList.add('grid-cols-2', 'sm:grid-cols-4');
+      $('managerBtn').classList.add('hidden');
+      $('adminGear').textContent = '🔓';
+      $('adminGear').title = 'Đang ở khu quản lý';
+      $('logoutBtn').classList.remove('hidden');
+      if (sheetUrl) {
+        const link = $('sheetLink');
+        link.href = sheetUrl;
+        link.classList.remove('hidden');
+        link.classList.add('inline-flex');
+      }
+    }
+    function lockManager() {
+      sessionStorage.removeItem('lts_pin');
+      document.querySelectorAll('.tab-btn[data-tab="approve"], .tab-btn[data-tab="stats"], .tab-btn[data-tab="history"]').forEach((b) => b.classList.add('hidden'));
+      $('tabNav').classList.add('grid-cols-1');
+      $('tabNav').classList.remove('grid-cols-2', 'sm:grid-cols-4');
+      $('managerBtn').classList.remove('hidden');
+      $('adminGear').textContent = '🔒';
+      $('adminGear').title = 'Khu quản lý';
+      $('logoutBtn').classList.add('hidden');
+      $('sheetLink').classList.add('hidden');
+      activateTab('form');
+    }
+
+    // Modal PIN
+    function openPinModal() {
+      $('pinError').classList.add('hidden');
+      $('pinInput').value = '';
+      $('pinModal').classList.remove('hidden');
+      $('pinModal').classList.add('flex');
+      setTimeout(() => $('pinInput').focus(), 50);
+    }
+    $('managerBtn').addEventListener('click', openPinModal);
+    $('adminGear').addEventListener('click', openPinModal);
+    $('pinCancel').addEventListener('click', closePinModal);
+    function closePinModal() {
+      $('pinModal').classList.add('hidden');
+      $('pinModal').classList.remove('flex');
+    }
+    $('pinForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const pin = $('pinInput').value.trim();
+      if (!pin) return;
+      $('pinSubmit').disabled = true;
+      $('pinSubmit').textContent = 'Đang kiểm tra…';
+      try {
+        const res = await fetch(API_URL + '?action=login&pin=' + encodeURIComponent(pin));
+        const data = await res.json();
+        if (data.status === 'success') {
+          sessionStorage.setItem('lts_pin', pin);
+          unlockManager(data.sheetUrl);
+          closePinModal();
+          activateTab('approve');
+          showToast('Đã vào khu quản lý.', true);
+        } else {
+          $('pinError').textContent = data.message || 'Sai mã PIN.';
+          $('pinError').classList.remove('hidden');
+        }
+      } catch (err) {
+        $('pinError').textContent = 'Lỗi kết nối, thử lại.';
+        $('pinError').classList.remove('hidden');
+      } finally {
+        $('pinSubmit').disabled = false;
+        $('pinSubmit').textContent = 'Vào';
+      }
+    });
+    $('logoutBtn').addEventListener('click', () => { lockManager(); showToast('Đã thoát quản lý.', true); });
+
     /* ---------- Tabs ---------- */
     const tabBtns = document.querySelectorAll('.tab-btn');
     function activateTab(name) {
+      if ((name === 'approve' || name === 'stats' || name === 'history') && !isManager()) name = 'form';
       tabBtns.forEach((b) => {
         const on = b.dataset.tab === name;
         b.classList.toggle('bg-brand-700', on);
@@ -174,6 +305,7 @@
       document.querySelectorAll('.tab-panel').forEach((p) => p.classList.remove('active'));
       $('panel-' + name).classList.add('active');
       if (name === 'stats' && !$('statsBody').dataset.loaded) loadStats();
+      if (name === 'approve') loadPending();
     }
     tabBtns.forEach((b) => b.addEventListener('click', () => activateTab(b.dataset.tab)));
 
@@ -197,7 +329,15 @@
       const iso = new Date().toISOString().slice(0, 10);
       $('date').value = iso;
       $('date').min = iso;
+      updateDateDisplay();
     })();
+    function updateDateDisplay() {
+      const v = $('date').value; // yyyy-mm-dd
+      if (!v) { $('dateDisplay').textContent = ''; return; }
+      const [y, m, d] = v.split('-');
+      $('dateDisplay').textContent = '📅 ' + d + '/' + m + '/' + y;
+    }
+    $('date').addEventListener('change', updateDateDisplay);
 
     function currentType() {
       const el = document.querySelector('input[name="type"]:checked');
@@ -317,9 +457,12 @@
       const body = $('statsBody');
       body.innerHTML = spinnerHTML('Đang tải thống kê…');
       try {
-        const res = await fetch(API_URL + '?action=stats&month=' + m + '&year=' + y);
+        const res = await fetch(API_URL + '?action=stats&month=' + m + '&year=' + y + '&pin=' + encodeURIComponent(getPin()));
         const data = await res.json();
-        if (data.status !== 'success') throw new Error(data.message);
+        if (data.status !== 'success') {
+          if (/PIN/i.test(data.message || '')) { lockManager(); showToast('Phiên quản lý hết hạn, đăng nhập lại.', false); return; }
+          throw new Error(data.message);
+        }
         renderStats(data.stats, m, y);
         body.dataset.loaded = '1';
       } catch (e) {
@@ -371,6 +514,84 @@
         '<div class="mt-0.5 text-xs text-slate-500">' + label + '</div></div>';
     }
 
+    /* ---------- Duyệt ---------- */
+    $('approveReload').addEventListener('click', loadPending);
+    $('approveFilter').addEventListener('change', loadPending);
+
+    async function loadPending() {
+      const body = $('approveBody');
+      const filter = $('approveFilter').value;
+      body.innerHTML = spinnerHTML('Đang tải…');
+      try {
+        const res = await fetch(API_URL + '?action=pending&filter=' + encodeURIComponent(filter) + '&pin=' + encodeURIComponent(getPin()));
+        const data = await res.json();
+        if (data.status !== 'success') {
+          if (/PIN/i.test(data.message || '')) { lockManager(); showToast('Phiên hết hạn, đăng nhập lại.', false); return; }
+          throw new Error(data.message);
+        }
+        renderPending(data.items);
+      } catch (e) {
+        body.innerHTML = '<p class="text-red-600">Lỗi tải danh sách. Thử lại.</p>';
+      }
+    }
+
+    function renderPending(items) {
+      const body = $('approveBody');
+      if (!items.length) { body.innerHTML = '<p class="rounded-xl bg-slate-50 py-6 text-center text-slate-400">Không có yêu cầu nào.</p>'; return; }
+      body.innerHTML = items.map((it) => {
+        const typeBadge = it.type === 'Đi trễ'
+          ? '<span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">⏰ Đi trễ</span>'
+          : '<span class="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700">🚫 Nghỉ</span>';
+        const lateInfo = it.type === 'Đi trễ' && it.arrival
+          ? '<span class="text-slate-500">· đến ' + esc(it.arrival) + ' (trễ ' + it.lateMinutes + 'p)</span>' : '';
+        const actions =
+          '<div class="mt-2 flex gap-2">' +
+            '<button data-row="' + it.row + '" data-status="Đã duyệt" class="approve-act flex-1 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-green-700">✅ Duyệt</button>' +
+            '<button data-row="' + it.row + '" data-status="Từ chối" class="approve-act flex-1 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700">❌ Từ chối</button>' +
+            (it.status !== 'Chờ duyệt'
+              ? '<button data-row="' + it.row + '" data-status="Chờ duyệt" class="approve-act rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50">↩︎ Chờ</button>'
+              : '') +
+          '</div>';
+        return '<div class="rounded-xl border border-slate-200 bg-white p-3">' +
+          '<div class="mb-1 flex items-center justify-between gap-2">' +
+            '<div class="flex items-center gap-2">' + typeBadge + '<span class="font-bold text-slate-800">' + esc(it.name) + '</span></div>' +
+            badgeStatus(it.status) +
+          '</div>' +
+          '<div class="text-xs text-slate-600"><span class="font-semibold text-slate-700">' + esc(it.date) + '</span> · ' + esc(it.reason) + ' ' + lateInfo + '</div>' +
+          '<div class="mt-1 text-[11px] text-slate-400">Gửi: ' + esc(it.timestamp) + '</div>' +
+          actions +
+        '</div>';
+      }).join('');
+
+      body.querySelectorAll('.approve-act').forEach((btn) => {
+        btn.addEventListener('click', () => updateStatus(btn.dataset.row, btn.dataset.status, btn));
+      });
+    }
+
+    async function updateStatus(row, status, btn) {
+      const original = btn.textContent;
+      btn.disabled = true; btn.textContent = '…';
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'updateStatus', pin: getPin(), row: row, status: status }),
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          showToast(data.message || 'Đã cập nhật.', true);
+          $('statsBody').dataset.loaded = ''; // thống kê cần tải lại
+          loadPending();
+        } else {
+          if (/PIN/i.test(data.message || '')) { lockManager(); showToast('Phiên hết hạn, đăng nhập lại.', false); }
+          else { showToast(data.message || 'Cập nhật thất bại.', false); btn.disabled = false; btn.textContent = original; }
+        }
+      } catch (e) {
+        showToast('Lỗi kết nối.', false);
+        btn.disabled = false; btn.textContent = original;
+      }
+    }
+
     /* ---------- History ---------- */
     $('historyReload').addEventListener('click', loadHistory);
     $('historyName').addEventListener('change', loadHistory);
@@ -381,9 +602,12 @@
       if (!name) { body.innerHTML = 'Chọn tên để xem lịch sử.'; return; }
       body.innerHTML = spinnerHTML('Đang tải…');
       try {
-        const res = await fetch(API_URL + '?action=history&name=' + encodeURIComponent(name));
+        const res = await fetch(API_URL + '?action=history&name=' + encodeURIComponent(name) + '&pin=' + encodeURIComponent(getPin()));
         const data = await res.json();
-        if (data.status !== 'success') throw new Error(data.message);
+        if (data.status !== 'success') {
+          if (/PIN/i.test(data.message || '')) { lockManager(); showToast('Phiên quản lý hết hạn, đăng nhập lại.', false); return; }
+          throw new Error(data.message);
+        }
         renderHistory(data.history);
       } catch (e) {
         body.innerHTML = '<p class="text-red-600">Lỗi tải lịch sử. Thử lại.</p>';
@@ -420,6 +644,59 @@
       return '<span class="rounded-full px-2 py-0.5 text-xs font-semibold ' + cls + '">' + esc(s) + '</span>';
     }
 
+    /* ---------- Hình nền ---------- */
+    function applyBackground(url) {
+      if (url) {
+        document.body.style.backgroundImage =
+          'linear-gradient(rgba(239,246,255,.82), rgba(219,234,254,.9)), url("' + url + '")';
+        document.body.style.backgroundSize = 'cover';
+        document.body.style.backgroundPosition = 'center';
+        document.body.style.backgroundAttachment = 'fixed';
+      } else {
+        document.body.style.backgroundImage = '';
+      }
+    }
+    async function loadConfig() {
+      try {
+        const res = await fetch(API_URL + '?action=config');
+        const data = await res.json();
+        if (data.status === 'success') {
+          applyBackground(data.bgUrl);
+          $('bgUrlInput').value = data.bgUrl || '';
+        }
+      } catch (e) { /* bỏ qua, giữ nền mặc định */ }
+    }
+    async function saveBackground(url) {
+      $('bgSave').disabled = true; $('bgSave').textContent = '…';
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'setBackground', pin: getPin(), bgUrl: url }),
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          applyBackground(url);
+          $('bgUrlInput').value = url;
+          showToast(data.message || 'Đã lưu.', true);
+        } else {
+          if (/PIN/i.test(data.message || '')) { lockManager(); showToast('Phiên hết hạn, đăng nhập lại.', false); }
+          else showToast(data.message || 'Lưu thất bại.', false);
+        }
+      } catch (e) {
+        showToast('Lỗi kết nối.', false);
+      } finally {
+        $('bgSave').disabled = false; $('bgSave').textContent = 'Lưu';
+      }
+    }
+    $('bgSave').addEventListener('click', () => {
+      const url = $('bgUrlInput').value.trim();
+      if (!url) return showToast('Nhập link ảnh.', false);
+      if (!/^https?:\/\//i.test(url)) return showToast('Link phải bắt đầu http/https.', false);
+      saveBackground(url);
+    });
+    $('bgReset').addEventListener('click', () => saveBackground(''));
+
     /* ---------- Utils ---------- */
     function esc(s) {
       return String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
@@ -433,7 +710,19 @@
     /* ---------- Init ---------- */
     activateTab('form');
     loadMembers();
+    loadConfig();
     syncTypeUI();
+
+    // Nếu PIN còn trong session (đã đăng nhập trước đó) -> mở lại khu quản lý
+    (async function restoreManager() {
+      if (!getPin()) return;
+      try {
+        const res = await fetch(API_URL + '?action=login&pin=' + encodeURIComponent(getPin()));
+        const data = await res.json();
+        if (data.status === 'success') unlockManager(data.sheetUrl);
+        else sessionStorage.removeItem('lts_pin');
+      } catch (e) { /* offline -> giữ nguyên, thử lại lần sau */ }
+    })();
   </script>
 </body>
 </html>
