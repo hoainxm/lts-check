@@ -27,7 +27,16 @@
     body { -webkit-tap-highlight-color: transparent; }
     input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
     .tab-panel { display: none; }
-    .tab-panel.active { display: block; }
+    .tab-panel.active { display: block; animation: fadeUp .28s cubic-bezier(.16,1,.3,1); }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    @keyframes pop { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+    .card-in { animation: pop .3s cubic-bezier(.16,1,.3,1); }
+    /* select gọn, đồng nhất mũi tên */
+    select { -webkit-appearance: none; appearance: none; background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2394a3b8'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right .6rem center; background-size: 1.1em; padding-right: 2rem; }
+    *:focus-visible { outline: none; }
+    @media (prefers-reduced-motion: reduce) { *, .tab-panel.active, .card-in { animation: none !important; } }
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-brand-50 via-white to-brand-100 font-sans text-slate-800 antialiased">
@@ -57,8 +66,8 @@
         class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/80 text-base shadow ring-1 ring-slate-200 transition hover:bg-brand-50 hover:ring-brand-300">🔒</button>
     </header>
 
-    <!-- Tabs -->
-    <nav id="tabNav" class="mb-3 grid grid-cols-1 gap-1 rounded-2xl bg-white/70 p-1 shadow-sm ring-1 ring-slate-200">
+    <!-- Tabs (ẩn với user thường; chỉ hiện khi vào khu quản lý) -->
+    <nav id="tabNav" class="mb-3 hidden grid-cols-1 gap-1 rounded-2xl bg-white/70 p-1 shadow-sm ring-1 ring-slate-200">
       <button data-tab="form" class="tab-btn rounded-xl px-3 py-2.5 text-sm font-semibold transition">📝 Gửi</button>
       <button data-tab="approve" class="tab-btn hidden rounded-xl px-3 py-2.5 text-sm font-semibold transition">✅ Duyệt</button>
       <button data-tab="stats" class="tab-btn hidden rounded-xl px-3 py-2.5 text-sm font-semibold transition">📊 Thống kê</button>
@@ -100,9 +109,14 @@
                   class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100" />
               </div>
               <div id="arrivalWrap">
-                <label for="arrivalTime" class="mb-1 block text-xs font-semibold text-slate-700">Giờ đến <span class="text-red-500">*</span></label>
-                <input type="time" id="arrivalTime" value="19:00"
-                  class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100" />
+                <label class="mb-1 block text-xs font-semibold text-slate-700">Giờ đến (24h) <span class="text-red-500">*</span></label>
+                <div class="flex items-center gap-1">
+                  <select id="arrHour" aria-label="Giờ"
+                    class="w-full rounded-xl border border-slate-300 bg-white px-2 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100"></select>
+                  <span class="font-bold text-slate-400">:</span>
+                  <select id="arrMin" aria-label="Phút"
+                    class="w-full rounded-xl border border-slate-300 bg-white px-2 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100"></select>
+                </div>
               </div>
             </div>
             <p id="lateHint" class="text-xs text-slate-500"></p>
@@ -222,8 +236,8 @@
 
     function unlockManager(sheetUrl) {
       document.querySelectorAll('.tab-btn.hidden').forEach((b) => b.classList.remove('hidden'));
-      $('tabNav').classList.remove('grid-cols-1');
-      $('tabNav').classList.add('grid-cols-2', 'sm:grid-cols-4');
+      $('tabNav').classList.remove('hidden', 'grid-cols-1');
+      $('tabNav').classList.add('grid', 'grid-cols-2', 'sm:grid-cols-4');
       $('managerBtn').classList.add('hidden');
       $('adminGear').textContent = '🔓';
       $('adminGear').title = 'Đang ở khu quản lý';
@@ -238,8 +252,8 @@
     function lockManager() {
       sessionStorage.removeItem('lts_pin');
       document.querySelectorAll('.tab-btn[data-tab="approve"], .tab-btn[data-tab="stats"], .tab-btn[data-tab="history"]').forEach((b) => b.classList.add('hidden'));
-      $('tabNav').classList.add('grid-cols-1');
-      $('tabNav').classList.remove('grid-cols-2', 'sm:grid-cols-4');
+      $('tabNav').classList.add('hidden', 'grid-cols-1');
+      $('tabNav').classList.remove('grid', 'grid-cols-2', 'sm:grid-cols-4');
       $('adminGear').textContent = '🔒';
       $('adminGear').title = 'Khu quản lý';
       $('logoutBtn').classList.add('hidden');
@@ -325,19 +339,33 @@
 
     /* ---------- Form ---------- */
     const form = $('requestForm'), nameSel = $('name'), arrivalWrap = $('arrivalWrap'),
-          arrivalTime = $('arrivalTime'), lateHint = $('lateHint'), submitBtn = $('submitBtn');
+          arrHour = $('arrHour'), arrMin = $('arrMin'), lateHint = $('lateHint'), submitBtn = $('submitBtn');
 
-    // Giờ hiện tại dạng 24h "HH:mm" theo giờ máy người dùng
-    function nowHHMM() {
+    // Dropdown giờ 24h (ép hiển thị 24h mọi thiết bị, không phụ thuộc đồng hồ máy)
+    (function fillTimeOptions() {
+      for (let h = 0; h < 24; h++) {
+        const o = document.createElement('option');
+        o.value = String(h).padStart(2, '0'); o.textContent = String(h).padStart(2, '0');
+        arrHour.appendChild(o);
+      }
+      for (let m = 0; m < 60; m++) {
+        const o = document.createElement('option');
+        o.value = String(m).padStart(2, '0'); o.textContent = String(m).padStart(2, '0');
+        arrMin.appendChild(o);
+      }
+    })();
+    function currentArrival() { return arrHour.value + ':' + arrMin.value; }
+    function setArrivalNow() {
       const d = new Date();
-      return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+      arrHour.value = String(d.getHours()).padStart(2, '0');
+      arrMin.value = String(d.getMinutes()).padStart(2, '0');
     }
 
     (function initDate() {
       const iso = new Date().toISOString().slice(0, 10);
       $('date').value = iso;
       $('date').min = iso;
-      arrivalTime.value = nowHHMM(); // mặc định = giờ hiện tại (VD 15:00)
+      setArrivalNow(); // mặc định = giờ hiện tại (VD 15:02)
     })();
 
     function currentType() {
@@ -354,9 +382,9 @@
     document.querySelectorAll('input[name="type"]').forEach((r) => r.addEventListener('change', syncTypeUI));
 
     function updateLateHint() {
-      if (currentType() !== 'Đi trễ' || !arrivalTime.value) { lateHint.textContent = ''; return; }
+      if (currentType() !== 'Đi trễ') { lateHint.textContent = ''; return; }
       const [ph, pm] = PRACTICE_TIME.split(':').map(Number);
-      const [ah, am] = arrivalTime.value.split(':').map(Number);
+      const [ah, am] = currentArrival().split(':').map(Number);
       const diff = (ah * 60 + am) - (ph * 60 + pm);
       if (diff <= 0) {
         lateHint.textContent = '✅ Đến trước/đúng giờ tập (18:30) — ghi trễ 0 phút.';
@@ -366,7 +394,8 @@
         lateHint.className = 'mt-1.5 text-xs text-amber-600';
       }
     }
-    arrivalTime.addEventListener('input', updateLateHint);
+    arrHour.addEventListener('change', updateLateHint);
+    arrMin.addEventListener('change', updateLateHint);
 
     function setLoading(on) {
       submitBtn.disabled = on;
@@ -402,7 +431,7 @@
         name: nameSel.value.trim(),
         type: currentType(),
         date: $('date').value,
-        arrivalTime: currentType() === 'Đi trễ' ? arrivalTime.value : '',
+        arrivalTime: currentType() === 'Đi trễ' ? currentArrival() : '',
         reason: $('reason').value.trim(),
       };
       if (!payload.name) return showToast('Vui lòng chọn thành viên.', false);
@@ -422,7 +451,7 @@
           showToast(data.message || 'Đã gửi yêu cầu!', true);
           form.reset();
           document.querySelector('input[name="type"][value="Đi trễ"]').checked = true;
-          arrivalTime.value = nowHHMM();
+          setArrivalNow();
           $('date').value = new Date().toISOString().slice(0, 10);
           syncTypeUI();
           $('statsBody').dataset.loaded = ''; // buộc thống kê tải lại
