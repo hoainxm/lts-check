@@ -165,16 +165,28 @@
         </button>
       </header>
 
-      <!-- Tabs (ẩn với user thường; chỉ hiện khi vào khu quản lý) -->
+      <!-- Tabs: Gửi + Lịch tuần public; Điểm danh / Thống kê / Lịch sử chỉ hiện khi vào khu quản lý -->
       <nav
         id="tabNav"
-        class="mb-3 hidden grid-cols-1 gap-1 rounded-2xl bg-white/70 p-1 shadow-sm ring-1 ring-slate-200"
+        class="mb-3 grid grid-cols-2 gap-1 rounded-2xl bg-white/70 p-1 shadow-sm ring-1 ring-slate-200"
       >
         <button
           data-tab="form"
           class="tab-btn rounded-xl px-3 py-2.5 text-sm font-semibold transition"
         >
           📝 Gửi
+        </button>
+        <button
+          data-tab="schedule"
+          class="tab-btn rounded-xl px-3 py-2.5 text-sm font-semibold transition"
+        >
+          📅 Lịch tuần
+        </button>
+        <button
+          data-tab="rollcall"
+          class="tab-btn hidden rounded-xl px-3 py-2.5 text-sm font-semibold transition"
+        >
+          ✅ Điểm danh
         </button>
         <button
           data-tab="stats"
@@ -330,6 +342,88 @@
                 <span id="submitText">Gửi yêu cầu</span>
               </button>
             </form>
+          </div>
+        </section>
+
+        <!-- ========== TAB: LỊCH TUẦN (public) ========== -->
+        <section id="panel-schedule" class="tab-panel">
+          <div
+            class="rounded-2xl border border-slate-200/70 bg-white/90 p-4 shadow-xl shadow-slate-200/60 backdrop-blur"
+          >
+            <h3 class="mb-1 text-sm font-bold text-slate-800">
+              📅 Đăng ký lịch tập tuần sau
+            </h3>
+            <p class="mb-3 text-xs text-slate-500">
+              Tuần <span id="schedWeekLabel" class="font-semibold text-brand-700"></span>.
+              Tick những ngày bạn đi tập. Gửi lại sẽ ghi đè lịch cũ.
+              Sang Thứ 2 tuần đó sẽ khóa — đi tập ngoài lịch thì nhờ quản lý điểm danh.
+            </p>
+            <div class="space-y-2.5">
+              <div>
+                <label
+                  for="schedName"
+                  class="mb-1 block text-xs font-semibold text-slate-700"
+                  >Thành viên <span class="text-red-500">*</span></label
+                >
+                <select
+                  id="schedName"
+                  class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
+                >
+                  <option value="">Đang tải danh sách…</option>
+                </select>
+              </div>
+              <div id="schedDays" class="grid grid-cols-4 gap-2"></div>
+              <p id="schedHint" class="text-xs text-slate-500"></p>
+              <button
+                id="schedSubmit"
+                class="mt-1 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-brand-700/30 transition hover:bg-brand-800 active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                <span id="schedSubmitText">Lưu lịch tuần</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== TAB: ĐIỂM DANH (admin) ========== -->
+        <section id="panel-rollcall" class="tab-panel">
+          <div
+            class="rounded-3xl border border-slate-200/70 bg-white/90 p-5 shadow-xl shadow-slate-200/60 backdrop-blur sm:p-6"
+          >
+            <div class="mb-4 flex items-center gap-2">
+              <input
+                id="rollcallDate"
+                type="date"
+                class="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
+              />
+              <button
+                id="rollcallReload"
+                class="rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-800"
+              >
+                Xem
+              </button>
+            </div>
+            <div id="rollcallBody" class="space-y-2 text-sm text-slate-500">
+              Chọn ngày để điểm danh.
+            </div>
+            <div class="mt-4 border-t border-slate-200 pt-3">
+              <p class="mb-2 text-xs font-semibold text-slate-700">
+                ➕ Điểm danh ngoài lịch (người không đăng ký hôm đó)
+              </p>
+              <div class="flex gap-2">
+                <select
+                  id="walkinName"
+                  class="flex-1 rounded-xl border border-slate-300 bg-white px-2 py-2 text-sm outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
+                >
+                  <option value="">— Chọn tên —</option>
+                </select>
+                <button
+                  id="walkinNow"
+                  class="rounded-xl bg-brand-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-800"
+                >
+                  Có mặt lúc này
+                </button>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -503,8 +597,8 @@
         document
           .querySelectorAll(".tab-btn.hidden")
           .forEach((b) => b.classList.remove("hidden"));
-        $("tabNav").classList.remove("hidden", "grid-cols-1");
-        $("tabNav").classList.add("grid", "grid-cols-3");
+        $("tabNav").classList.remove("grid-cols-2");
+        $("tabNav").classList.add("grid-cols-3");
         $("adminGear").textContent = "🔓";
         $("adminGear").title = "Thoát quản lý";
         if (sheetUrl) {
@@ -518,11 +612,11 @@
         sessionStorage.removeItem("lts_pin");
         document
           .querySelectorAll(
-            '.tab-btn[data-tab="stats"], .tab-btn[data-tab="history"]',
+            '.tab-btn[data-tab="stats"], .tab-btn[data-tab="history"], .tab-btn[data-tab="rollcall"]',
           )
           .forEach((b) => b.classList.add("hidden"));
-        $("tabNav").classList.add("hidden", "grid-cols-1");
-        $("tabNav").classList.remove("grid", "grid-cols-3");
+        $("tabNav").classList.add("grid-cols-2");
+        $("tabNav").classList.remove("grid-cols-3");
         $("adminGear").textContent = "🔒";
         $("adminGear").title = "Khu quản lý";
         $("sheetLink").classList.add("hidden");
@@ -584,7 +678,10 @@
       /* ---------- Tabs ---------- */
       const tabBtns = document.querySelectorAll(".tab-btn");
       function activateTab(name) {
-        if ((name === "stats" || name === "history") && !isManager())
+        if (
+          (name === "stats" || name === "history" || name === "rollcall") &&
+          !isManager()
+        )
           name = "form";
         tabBtns.forEach((b) => {
           const on = b.dataset.tab === name;
@@ -598,6 +695,8 @@
           .forEach((p) => p.classList.remove("active"));
         $("panel-" + name).classList.add("active");
         if (name === "stats" && !$("statsBody").dataset.loaded) loadStats();
+        if (name === "rollcall" && !$("rollcallBody").dataset.loaded)
+          loadRollcall();
       }
       tabBtns.forEach((b) =>
         b.addEventListener("click", () => activateTab(b.dataset.tab)),
@@ -704,7 +803,7 @@
         const diff = ah * 60 + am - (ph * 60 + pm);
         if (diff <= 0) {
           lateHint.textContent =
-            "✅ Đến trước/đúng giờ tập (18:30) — ghi trễ 0 phút.";
+            "✅ Đến trước/đúng giờ tập (18:30).";
           lateHint.className = "mt-1.5 text-xs text-green-600";
         } else {
           lateHint.textContent = "⏱ Trễ khoảng " + diff + " phút so với 18:30.";
@@ -728,6 +827,8 @@
             data.status === "success" && data.members ? data.members : [];
           fillMemberSelect(nameSel, "— Chọn tên —");
           fillMemberSelect($("historyName"), "— Chọn tên —");
+          fillMemberSelect($("schedName"), "— Chọn tên —");
+          fillMemberSelect($("walkinName"), "— Chọn tên —");
           if (!MEMBERS.length)
             nameSel.innerHTML =
               '<option value="">(Chưa có thành viên trong Sheet)</option>';
@@ -851,13 +952,11 @@
         const active = stats.filter((s) => s.late + s.off > 0);
         const totLate = stats.reduce((a, s) => a + s.late, 0);
         const totOff = stats.reduce((a, s) => a + s.off, 0);
-        const totMin = stats.reduce((a, s) => a + s.lateMinutes, 0);
 
         let html =
-          '<div class="mb-3 grid grid-cols-3 gap-2">' +
+          '<div class="mb-3 grid grid-cols-2 gap-2">' +
           statCard("Lượt trễ", totLate, "text-amber-600") +
           statCard("Lượt nghỉ", totOff, "text-indigo-600") +
-          statCard("Tổng phút trễ", totMin, "text-rose-600") +
           "</div>";
 
         if (!active.length) {
@@ -876,7 +975,6 @@
           '<thead><tr class="bg-brand-700 text-white">' +
           '<th class="px-3 py-2 text-left font-semibold">Tên</th>' +
           '<th class="px-2 py-2 text-center font-semibold">Trễ</th>' +
-          '<th class="px-2 py-2 text-center font-semibold">Phút</th>' +
           '<th class="px-2 py-2 text-center font-semibold">Nghỉ</th>' +
           "</tr></thead><tbody>";
         active.forEach((s, i) => {
@@ -889,9 +987,6 @@
             "</td>" +
             '<td class="px-2 py-2 text-center">' +
             s.late +
-            "</td>" +
-            '<td class="px-2 py-2 text-center text-rose-600">' +
-            s.lateMinutes +
             "</td>" +
             '<td class="px-2 py-2 text-center">' +
             s.off +
@@ -968,12 +1063,15 @@
             const statusBadge = it.status ? badgeStatus(it.status) : "";
             const lateInfo =
               it.type === "Đi trễ" && it.arrival
-                ? '<span class="text-slate-500">· đến ' +
+                ? '<span class="text-slate-500">· đến dự kiến ' +
                   esc(it.arrival) +
-                  " (trễ " +
-                  it.lateMinutes +
-                  "p)</span>"
+                  "</span>"
                 : "";
+            const presentInfo = it.present
+              ? '<span class="text-slate-500">· có mặt ' +
+                esc(it.present) +
+                "</span>"
+              : "";
             const noteInfo = it.note
               ? '<div class="mt-1 rounded-lg bg-slate-50 px-2 py-1 text-[11px] text-slate-600">📝 ' +
                 esc(it.note) +
@@ -993,6 +1091,8 @@
               esc(it.reason) +
               " " +
               lateInfo +
+              " " +
+              presentInfo +
               "</div>" +
               noteInfo +
               '<div class="mt-1 text-[11px] text-slate-400">Gửi: ' +
@@ -1018,6 +1118,284 @@
           "</span>"
         );
       }
+
+      /* ---------- Lịch tuần (đăng ký) ---------- */
+      const DAY_LABELS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+      let SCHED_WEEK = ""; // yyyy-mm-dd Thứ 2 tuần sau — server là nguồn chuẩn
+
+      function nextMonday() {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        d.setDate(d.getDate() - ((d.getDay() + 6) % 7) + 7);
+        return d;
+      }
+      function fmtDM(d) {
+        return (
+          String(d.getDate()).padStart(2, "0") +
+          "/" +
+          String(d.getMonth() + 1).padStart(2, "0")
+        );
+      }
+      function isoOf(d) {
+        return (
+          d.getFullYear() +
+          "-" +
+          String(d.getMonth() + 1).padStart(2, "0") +
+          "-" +
+          String(d.getDate()).padStart(2, "0")
+        );
+      }
+      function nowHHMM() {
+        const d = new Date();
+        return (
+          String(d.getHours()).padStart(2, "0") +
+          ":" +
+          String(d.getMinutes()).padStart(2, "0")
+        );
+      }
+
+      function renderSchedDays(days) {
+        const wrap = $("schedDays");
+        const mon = nextMonday();
+        const sun = new Date(mon);
+        sun.setDate(mon.getDate() + 6);
+        $("schedWeekLabel").textContent = fmtDM(mon) + " – " + fmtDM(sun);
+        wrap.innerHTML = "";
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(mon);
+          d.setDate(mon.getDate() + i);
+          const label = document.createElement("label");
+          label.className = "cursor-pointer";
+          label.innerHTML =
+            '<input type="checkbox" class="peer sr-only sched-day"' +
+            (days && days[i] ? " checked" : "") +
+            "/>" +
+            '<div class="flex flex-col items-center rounded-xl border-2 border-slate-200 px-1 py-2 text-xs font-semibold text-slate-600 transition peer-checked:border-brand-600 peer-checked:bg-brand-50 peer-checked:text-brand-700">' +
+            "<span>" +
+            DAY_LABELS[i] +
+            '</span><span class="text-[10px] font-normal">' +
+            fmtDM(d) +
+            "</span></div>";
+          wrap.appendChild(label);
+        }
+      }
+
+      async function loadSchedule() {
+        const name = $("schedName").value;
+        const hint = $("schedHint");
+        if (!name) {
+          renderSchedDays(null);
+          hint.textContent = "";
+          return;
+        }
+        hint.textContent = "Đang tải lịch đã đăng ký…";
+        try {
+          const res = await fetch(
+            API_URL + "?action=schedule&name=" + encodeURIComponent(name),
+          );
+          const data = await res.json();
+          if (data.status !== "success") throw new Error(data.message);
+          SCHED_WEEK = data.week;
+          renderSchedDays(data.days);
+          hint.textContent = data.registered
+            ? "✏️ Đã có lịch tuần này — sửa rồi bấm Lưu để ghi đè."
+            : "Chưa đăng ký tuần này.";
+        } catch (e) {
+          renderSchedDays(null);
+          hint.textContent = "Lỗi tải lịch, vẫn có thể tick và lưu mới.";
+        }
+      }
+      $("schedName").addEventListener("change", loadSchedule);
+
+      $("schedSubmit").addEventListener("click", async () => {
+        const name = $("schedName").value;
+        if (!name) return showToast("Vui lòng chọn thành viên.", false);
+        const days = [...document.querySelectorAll(".sched-day")].map(
+          (c) => c.checked,
+        );
+        const btn = $("schedSubmit");
+        btn.disabled = true;
+        $("schedSubmitText").textContent = "Đang lưu…";
+        try {
+          const res = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({
+              action: "registerSchedule",
+              name: name,
+              week: SCHED_WEEK || isoOf(nextMonday()),
+              days: days,
+            }),
+          });
+          const data = await res.json();
+          showToast(
+            data.message || (data.status === "success" ? "Đã lưu." : "Lỗi."),
+            data.status === "success",
+          );
+        } catch (e) {
+          showToast("Lỗi kết nối, thử lại sau.", false);
+        } finally {
+          btn.disabled = false;
+          $("schedSubmitText").textContent = "Lưu lịch tuần";
+        }
+      });
+
+      /* ---------- Điểm danh (admin) ---------- */
+      const RESULT_BADGE = {
+        ontime: ["✅ Đúng giờ", "bg-green-100 text-green-700"],
+        late_ok: ["🟡 Trễ có phép", "bg-amber-100 text-amber-700"],
+        late_over: ["🟠 Trễ hơn phép", "bg-orange-100 text-orange-700"],
+        late: ["🔴 Trễ", "bg-rose-100 text-rose-700"],
+        off_ok: ["🔵 Nghỉ có phép", "bg-indigo-100 text-indigo-700"],
+        absent: ["⚫ Vắng", "bg-slate-200 text-slate-700"],
+        pending: ["⏳ Chưa đến", "bg-slate-100 text-slate-500"],
+        walkin: ["⚪ Ngoài lịch", "bg-slate-100 text-slate-600"],
+      };
+
+      async function loadRollcall() {
+        if (!$("rollcallDate").value)
+          $("rollcallDate").value = new Date().toISOString().slice(0, 10);
+        const date = $("rollcallDate").value;
+        const body = $("rollcallBody");
+        body.innerHTML = spinnerHTML("Đang tải điểm danh…");
+        try {
+          const res = await fetch(
+            API_URL +
+              "?action=rollcall&date=" +
+              date +
+              "&pin=" +
+              encodeURIComponent(getPin()),
+          );
+          const data = await res.json();
+          if (data.status !== "success") {
+            if (/PIN/i.test(data.message || "")) {
+              lockManager();
+              showToast("Phiên quản lý hết hạn, đăng nhập lại.", false);
+              return;
+            }
+            throw new Error(data.message);
+          }
+          renderRollcall(data.list);
+          body.dataset.loaded = "1";
+        } catch (e) {
+          body.innerHTML =
+            '<p class="text-red-600">Lỗi tải điểm danh. Thử lại.</p>';
+        }
+      }
+
+      function renderRollcall(list) {
+        const body = $("rollcallBody");
+        // Dropdown ngoài lịch = thành viên chưa có trong danh sách ngày này
+        const inList = new Set(list.map((it) => it.name));
+        const wSel = $("walkinName");
+        wSel.innerHTML = '<option value="">— Chọn tên —</option>';
+        MEMBERS.filter((m) => !inList.has(m)).forEach((m) => {
+          const o = document.createElement("option");
+          o.value = m;
+          o.textContent = m;
+          wSel.appendChild(o);
+        });
+
+        if (!list.length) {
+          body.innerHTML =
+            '<p class="rounded-xl bg-slate-50 py-6 text-center text-slate-400">Chưa ai đăng ký hay điểm danh ngày này.</p>';
+          return;
+        }
+        body.innerHTML = list
+          .map((it) => {
+            const badge =
+              RESULT_BADGE[it.result] || ["—", "bg-slate-100 text-slate-500"];
+            const tags = [];
+            if (it.registered)
+              tags.push(
+                '<span class="rounded-full bg-brand-50 px-2 py-0.5 font-semibold text-brand-700">📅 Có đăng ký</span>',
+              );
+            if (it.expected)
+              tags.push(
+                '<span class="rounded-full bg-amber-50 px-2 py-0.5 font-semibold text-amber-700">⏰ Xin trễ, đến ' +
+                  esc(it.expected) +
+                  "</span>",
+              );
+            if (it.off)
+              tags.push(
+                '<span class="rounded-full bg-indigo-50 px-2 py-0.5 font-semibold text-indigo-700">🚫 Xin nghỉ</span>',
+              );
+            return (
+              '<div class="rounded-xl border border-slate-200 bg-white p-3" data-name="' +
+              esc(it.name) +
+              '">' +
+              '<div class="mb-1.5 flex items-center justify-between gap-2">' +
+              '<span class="font-semibold text-slate-700">' +
+              esc(it.name) +
+              "</span>" +
+              '<span class="rounded-full px-2 py-0.5 text-xs font-semibold ' +
+              badge[1] +
+              '">' +
+              badge[0] +
+              "</span></div>" +
+              (tags.length
+                ? '<div class="mb-2 flex flex-wrap gap-1 text-[11px]">' +
+                  tags.join("") +
+                  "</div>"
+                : "") +
+              '<div class="flex gap-2">' +
+              '<input type="time" class="rc-time flex-1 rounded-xl border border-slate-300 bg-white px-2 py-1.5 text-sm outline-none focus:border-brand-500" value="' +
+              esc(it.checkin) +
+              '" />' +
+              '<button class="rc-now rounded-xl border border-brand-600 px-2 py-1.5 text-xs font-semibold text-brand-700 transition hover:bg-brand-50">Bây giờ</button>' +
+              '<button class="rc-save rounded-xl bg-brand-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-800">Lưu</button>' +
+              "</div></div>"
+            );
+          })
+          .join("");
+      }
+
+      async function saveCheckin(name, time) {
+        try {
+          const res = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({
+              action: "checkin",
+              pin: getPin(),
+              name: name,
+              date: $("rollcallDate").value,
+              time: time,
+            }),
+          });
+          const data = await res.json();
+          if (data.status !== "success" && /PIN/i.test(data.message || "")) {
+            lockManager();
+            showToast("Phiên quản lý hết hạn, đăng nhập lại.", false);
+            return;
+          }
+          showToast(data.message || "Đã lưu.", data.status === "success");
+          loadRollcall();
+        } catch (e) {
+          showToast("Lỗi kết nối, thử lại sau.", false);
+        }
+      }
+
+      $("rollcallBody").addEventListener("click", (e) => {
+        const card = e.target.closest("[data-name]");
+        if (!card) return;
+        if (e.target.closest(".rc-now")) {
+          const t = nowHHMM();
+          card.querySelector(".rc-time").value = t;
+          saveCheckin(card.dataset.name, t);
+        } else if (e.target.closest(".rc-save")) {
+          saveCheckin(card.dataset.name, card.querySelector(".rc-time").value);
+        }
+      });
+      $("rollcallReload").addEventListener("click", loadRollcall);
+      $("rollcallDate").addEventListener("change", loadRollcall);
+      $("walkinNow").addEventListener("click", () => {
+        const name = $("walkinName").value;
+        if (!name) return showToast("Chọn tên để điểm danh.", false);
+        saveCheckin(name, nowHHMM());
+      });
+
+      renderSchedDays(null); // vẽ sẵn 7 ô ngày tuần sau
 
       /* ---------- Hình nền ---------- */
       function applyBackground(url) {
