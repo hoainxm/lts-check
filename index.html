@@ -157,6 +157,13 @@
           </p>
         </div>
         <button
+          id="rulesBtn"
+          title="Nội quy"
+          class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/80 text-base shadow ring-1 ring-slate-200 transition hover:bg-brand-50 hover:ring-brand-300"
+        >
+          📜
+        </button>
+        <button
           id="adminGear"
           title="Khu quản lý"
           class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/80 text-base shadow ring-1 ring-slate-200 transition hover:bg-brand-50 hover:ring-brand-300"
@@ -571,6 +578,97 @@
       </div>
     </div>
 
+    <!-- Modal Nội quy -->
+    <div
+      id="rulesModal"
+      class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 px-4 backdrop-blur-sm"
+    >
+      <div
+        class="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl sm:p-6"
+      >
+        <div class="mb-3 flex items-center justify-between">
+          <h3 class="text-lg font-bold text-slate-900">📜 Nội quy LTS</h3>
+          <button
+            id="rulesClose"
+            class="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="space-y-4 text-sm text-slate-700">
+          <section>
+            <h4 class="mb-1 font-bold text-brand-700">1. Xin nghỉ (OFF)</h4>
+            <ul class="list-disc space-y-1 pl-5">
+              <li>Xin phép trước ít nhất <b>1 ngày</b>, trình bày rõ lý do.</li>
+              <li>Nghỉ đột xuất: trình bày lý do và chờ quản lý duyệt.</li>
+              <li>
+                Vi phạm (không xin phép hoặc lý do không chính đáng):
+                <b class="text-rose-600">50.000đ + 1 biên bản</b>.
+              </li>
+            </ul>
+          </section>
+
+          <section>
+            <h4 class="mb-1 font-bold text-brand-700">2. Đi trễ</h4>
+            <ul class="list-disc space-y-1 pl-5">
+              <li>Xin phép trước ít nhất <b>30 phút</b>, trình bày rõ lý do.</li>
+              <li>Mức phạt tính theo số phút trễ so với giờ tập:</li>
+            </ul>
+            <div class="mt-2 overflow-hidden rounded-xl border border-slate-200">
+              <table class="w-full text-center text-xs">
+                <thead>
+                  <tr class="bg-brand-700 text-white">
+                    <th class="px-2 py-1.5 font-semibold">Số phút trễ</th>
+                    <th class="px-2 py-1.5 font-semibold">Mức phạt</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="bg-white"><td class="px-2 py-1.5">1 – 5 phút</td><td>5.000đ</td></tr>
+                  <tr class="bg-slate-50"><td class="px-2 py-1.5">6 – 10 phút</td><td>10.000đ</td></tr>
+                  <tr class="bg-white"><td class="px-2 py-1.5">11 – 15 phút</td><td>15.000đ</td></tr>
+                  <tr class="bg-slate-50"><td class="px-2 py-1.5">16 – 20 phút</td><td>20.000đ</td></tr>
+                  <tr class="bg-white"><td class="px-2 py-1.5">21 – 30 phút</td><td>30.000đ</td></tr>
+                  <tr class="bg-slate-50">
+                    <td class="px-2 py-1.5">Trên 30 phút</td>
+                    <td class="font-semibold text-rose-600">50.000đ + 1 biên bản</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section>
+            <h4 class="mb-1 font-bold text-brand-700">3. Giày tập</h4>
+            <ul class="list-disc space-y-1 pl-5">
+              <li>Không mang giày khi tập: <b class="text-rose-600">30.000đ</b>.</li>
+            </ul>
+          </section>
+
+          <section>
+            <h4 class="mb-1 font-bold text-brand-700">4. Đóng quỹ</h4>
+            <ul class="list-disc space-y-1 pl-5">
+              <li>
+                Quỹ tháng: đóng chậm nhất <b>ngày 20 hàng tháng</b>;
+                mỗi ngày trễ phạt thêm 5.000đ.
+              </li>
+              <li>
+                Tiền phạt: đóng trực tiếp vào quỹ trong vòng <b>10 ngày</b>
+                kể từ ngày vi phạm; mỗi ngày trễ phạt thêm 5.000đ.
+              </li>
+            </ul>
+          </section>
+
+          <section>
+            <h4 class="mb-1 font-bold text-brand-700">5. Biên bản</h4>
+            <ul class="list-disc space-y-1 pl-5">
+              <li>Nhận đủ <b class="text-rose-600">3 biên bản</b>: rời nhóm.</li>
+            </ul>
+          </section>
+        </div>
+      </div>
+    </div>
+
     <!-- Toast -->
     <div
       id="toast"
@@ -641,6 +739,17 @@
         else openPinModal();
       });
       $("pinCancel").addEventListener("click", closePinModal);
+
+      /* ---------- Nội quy ---------- */
+      function toggleRules(show) {
+        $("rulesModal").classList.toggle("hidden", !show);
+        $("rulesModal").classList.toggle("flex", show);
+      }
+      $("rulesBtn").addEventListener("click", () => toggleRules(true));
+      $("rulesClose").addEventListener("click", () => toggleRules(false));
+      $("rulesModal").addEventListener("click", (e) => {
+        if (e.target === $("rulesModal")) toggleRules(false); // bấm nền tối để đóng
+      });
       function closePinModal() {
         $("pinModal").classList.add("hidden");
         $("pinModal").classList.remove("flex");
