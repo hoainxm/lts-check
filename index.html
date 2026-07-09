@@ -771,7 +771,7 @@
       $("date").addEventListener("input", syncDateDisplay);
 
       (function initDate() {
-        const iso = new Date().toISOString().slice(0, 10);
+        const iso = isoOf(new Date()); // ngày LOCAL — toISOString trả ngày UTC, lệch trước 7h sáng VN
         $("date").value = iso;
         $("date").min = iso;
         syncDateDisplay();
@@ -878,7 +878,7 @@
               'input[name="type"][value="Đi trễ"]',
             ).checked = true;
             setArrivalNow();
-            $("date").value = new Date().toISOString().slice(0, 10);
+            $("date").value = isoOf(new Date());
             syncDateDisplay();
             syncTypeUI();
             $("statsBody").dataset.loaded = ""; // buộc thống kê tải lại
@@ -1095,9 +1095,11 @@
               presentInfo +
               "</div>" +
               noteInfo +
-              '<div class="mt-1 text-[11px] text-slate-400">Gửi: ' +
-              esc(it.timestamp) +
-              "</div>" +
+              (it.timestamp
+                ? '<div class="mt-1 text-[11px] text-slate-400">Gửi: ' +
+                  esc(it.timestamp) +
+                  "</div>"
+                : "") +
               "</div>"
             );
           })
@@ -1156,7 +1158,13 @@
 
       function renderSchedDays(days) {
         const wrap = $("schedDays");
-        const mon = nextMonday();
+        // Ưu tiên tuần server trả về — đồng hồ máy user có thể lệch múi giờ
+        const mon = SCHED_WEEK
+          ? (() => {
+              const p = SCHED_WEEK.split("-");
+              return new Date(+p[0], +p[1] - 1, +p[2]);
+            })()
+          : nextMonday();
         const sun = new Date(mon);
         sun.setDate(mon.getDate() + 6);
         $("schedWeekLabel").textContent = fmtDM(mon) + " – " + fmtDM(sun);
@@ -1232,6 +1240,7 @@
             data.message || (data.status === "success" ? "Đã lưu." : "Lỗi."),
             data.status === "success",
           );
+          if (data.status === "success") loadSchedule(); // cập nhật lại hint + trạng thái tick
         } catch (e) {
           showToast("Lỗi kết nối, thử lại sau.", false);
         } finally {
@@ -1254,7 +1263,7 @@
 
       async function loadRollcall() {
         if (!$("rollcallDate").value)
-          $("rollcallDate").value = new Date().toISOString().slice(0, 10);
+          $("rollcallDate").value = isoOf(new Date());
         const date = $("rollcallDate").value;
         const body = $("rollcallBody");
         body.innerHTML = spinnerHTML("Đang tải điểm danh…");
@@ -1380,9 +1389,8 @@
         const card = e.target.closest("[data-name]");
         if (!card) return;
         if (e.target.closest(".rc-now")) {
-          const t = nowHHMM();
-          card.querySelector(".rc-time").value = t;
-          saveCheckin(card.dataset.name, t);
+          card.querySelector(".rc-time").value = nowHHMM(); // hiển thị tạm; giờ chốt do server tính (múi giờ VN)
+          saveCheckin(card.dataset.name, "now");
         } else if (e.target.closest(".rc-save")) {
           saveCheckin(card.dataset.name, card.querySelector(".rc-time").value);
         }
@@ -1392,7 +1400,7 @@
       $("walkinNow").addEventListener("click", () => {
         const name = $("walkinName").value;
         if (!name) return showToast("Chọn tên để điểm danh.", false);
-        saveCheckin(name, nowHHMM());
+        saveCheckin(name, "now"); // server tự lấy giờ VN hiện tại
       });
 
       renderSchedDays(null); // vẽ sẵn 7 ô ngày tuần sau
