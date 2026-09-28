@@ -18,5 +18,5 @@ check "members"            "action=members"                    '"status":"succes
 check "config"             "action=config"                     '"status":"success"'
 check "schedule (Lịch tuần)" "action=schedule&name=__healthcheck__" '"status":"success".*"week"'
 check "rollcall có route (đòi PIN)" "action=rollcall&date=2000-01-01&pin=x" 'PIN'
-check "pending có route (đòi PIN)"  "action=pending&pin=x"             'PIN'
+check "history có route (đòi PIN)"  "action=history&name=x&pin=x"      'PIN'
 exit $fail

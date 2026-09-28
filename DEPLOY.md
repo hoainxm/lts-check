@@ -61,10 +61,13 @@ User gửi ──► Sheet tháng "MM/YYYY" (Chờ duyệt)
                  └─ Admin ❌ Từ chối ─► Từ chối (không tính)
 ```
 - **Mỗi tháng 1 sheet** tên `07/2026`, `08/2026`… tự tạo khi có yêu cầu tháng đó.
-- **Lịch tuần**: sheet `Lịch tuần` (Tuần | Tên | T2..CN | Cập nhật lúc) — chỉ đăng ký tuần sau, sang Thứ 2 khóa.
-  Mọi lần bấm Lưu (kể cả bị từ chối) ghi vào `Log lịch` → tra khi có người khiếu nại "đã đăng ký mà không thấy".
-- **Điểm danh**: sheet `Điểm danh` (Ngày | Tên | Giờ đến | Cập nhật lúc).
-- Ngày/tuần/hạn nộp đơn nghỉ tính theo **giờ VN phía server**, không phụ thuộc múi giờ project Apps Script hay đồng hồ máy user.
+- **Lịch tuần / đơn / điểm danh** (bản ma trận, v20+): mỗi tháng 1 sheet `Tháng MM/yyyy`, trong đó mỗi tuần 1 block
+  (người × ngày × 5 ô: ĐKy tập | Đi muộn/Nghỉ | Giờ dự kiến | Giờ đến | Lý do).
+  Tuần vắt 2 tháng nằm ở sheet của **tháng chứa Thứ 5** — VD tuần 28/09–04/10 nằm ở `Tháng 10/2026`, KHÔNG ở `Tháng 09/2026`.
+- **Nhật ký**: sheet `Nhật ký` ghi mọi lần gửi (đăng ký lịch, đơn, điểm danh — kể cả bị từ chối) kèm giờ VN → tra khi có khiếu nại.
+- Menu ⚙️ LTS → **Kiểm tra block tuần nằm sai sheet** / **Gộp block tuần nằm sai sheet (backfill)**: gộp dữ liệu block do bản code cũ
+  tạo nhầm sheet về đúng chỗ, chỉ điền ô trống, không xoá block cũ.
+- Menu **Chuyển dữ liệu cũ → sheet Tháng** tự chặn khi đã có sheet Tháng (chạy lại sẽ xoá sạch dữ liệu mới).
 - ⚠️ `apps-script/Code.gs` trong repo là **nguồn duy nhất**. Sửa trực tiếp trong trình soạn Apps Script thì phải copy ngược về repo ngay, nếu không lần deploy sau sẽ làm mất tính năng.
 - **Thống kê / Tổng kết** chỉ tính bản **Đã duyệt**.
 - **Lịch sử** hiện mọi yêu cầu của 1 người (mọi trạng thái, mới nhất trước).
