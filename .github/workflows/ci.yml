@@ -14,9 +14,5 @@ jobs:
           node-version: 22
       - name: Frontend ↔ Code.gs đủ action
         run: node scripts/check-actions.mjs
-      - name: Test backend (giờ VN)
+      - name: Test backend (giờ VN, giống appsscript.json)
         run: TZ=Asia/Ho_Chi_Minh node --test tests/backend.test.cjs
-      - name: Test backend (project lệch múi giờ)
-        run: |
-          TZ=America/Los_Angeles node --test tests/backend.test.cjs
-          TZ=Pacific/Kiritimati node --test tests/backend.test.cjs

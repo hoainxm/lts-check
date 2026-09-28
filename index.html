@@ -358,9 +358,17 @@
           <div
             class="rounded-2xl border border-slate-200/70 bg-white/90 p-4 shadow-xl shadow-slate-200/60 backdrop-blur"
           >
-            <h3 class="mb-1 text-sm font-bold text-slate-800">
+            <h3 id="schedTitle" class="mb-1 text-sm font-bold text-slate-800">
               📅 Đăng ký lịch tập tuần sau
             </h3>
+            <!-- Chỉ hiện khi admin mở lại đăng ký tuần hiện tại (menu ⚙️ LTS) -->
+            <div
+              id="schedWeekToggle"
+              class="mb-2 hidden grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 text-xs font-semibold"
+            >
+              <button data-mode="next" class="sched-mode rounded-lg px-2 py-1.5 transition">Tuần sau</button>
+              <button data-mode="this" class="sched-mode rounded-lg px-2 py-1.5 transition">Tuần này (đang mở)</button>
+            </div>
             <p class="mb-3 text-xs text-slate-500">
               Tuần <span id="schedWeekLabel" class="font-semibold text-brand-700"></span>.
               Tick những ngày bạn đi tập. Gửi lại sẽ ghi đè lịch cũ.
@@ -1035,7 +1043,7 @@
           const res = await fetch(API_URL, {
             method: "POST",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify(payload),
+            body: JSON.stringify({ ...payload, client: clientInfo() }),
           });
           const data = await res.json();
           if (data.status === "success") {
@@ -1323,6 +1331,39 @@
         );
       }
 
+      /* Mở lại đăng ký tuần hiện tại (admin bật từ menu Sheet) */
+      let REOPEN = null; // { week, until, fromDay } | null — lấy từ action=config / schedule
+      let SCHED_MODE = "next"; // "next" | "this"
+      let SCHED_FROM = 0; // ngày < SCHED_FROM (đã qua) không được sửa
+      function updateWeekToggle() {
+        const t = $("schedWeekToggle");
+        if (!REOPEN && SCHED_MODE === "this") SCHED_MODE = "next";
+        t.classList.toggle("hidden", !REOPEN);
+        t.classList.toggle("grid", !!REOPEN);
+        document.querySelectorAll(".sched-mode").forEach((b) => {
+          const on = b.dataset.mode === SCHED_MODE;
+          b.classList.toggle("bg-white", on);
+          b.classList.toggle("shadow", on);
+          b.classList.toggle("text-brand-700", on);
+          b.classList.toggle("text-slate-500", !on);
+        });
+        $("schedTitle").textContent =
+          SCHED_MODE === "this" && REOPEN
+            ? "📅 Đăng ký lại tuần này (quản lý đang mở)"
+            : "📅 Đăng ký lịch tập tuần sau";
+      }
+      document.querySelectorAll(".sched-mode").forEach((b) =>
+        b.addEventListener("click", () => {
+          if (SCHED_MODE === b.dataset.mode) return;
+          SCHED_MODE = b.dataset.mode;
+          SCHED_WEEK = "";
+          SCHED_FROM = 0;
+          updateWeekToggle();
+          renderSchedDays(null);
+          loadSchedule();
+        }),
+      );
+
       function renderSchedDays(days) {
         const wrap = $("schedDays");
         // Ưu tiên tuần server trả về — đồng hồ máy user có thể lệch múi giờ
@@ -1344,6 +1385,7 @@
           label.innerHTML =
             '<input type="checkbox" class="peer sr-only sched-day"' +
             (days && days[i] ? " checked" : "") +
+            (i < SCHED_FROM ? " disabled" : "") +
             "/>" +
             '<div class="flex flex-col items-center rounded-xl border-2 border-slate-200 px-1 py-2 text-xs font-semibold text-slate-600 transition peer-checked:border-brand-600 peer-checked:bg-brand-50 peer-checked:text-brand-700">' +
             "<span>" +
@@ -1351,6 +1393,7 @@
             '</span><span class="text-[10px] font-normal">' +
             fmtDM(d) +
             "</span></div>";
+          if (i < SCHED_FROM) label.classList.add("opacity-40", "cursor-not-allowed");
           wrap.appendChild(label);
         }
       }
@@ -1360,7 +1403,7 @@
       function setSchedBusy(on) {
         document
           .querySelectorAll(".sched-day")
-          .forEach((c) => (c.disabled = on));
+          .forEach((c, i) => (c.disabled = on || i < SCHED_FROM));
         $("schedDays").classList.toggle("opacity-50", on);
         $("schedSubmit").disabled = on;
       }
@@ -1374,11 +1417,28 @@
         );
       }
 
+      // Gửi kèm để Nhật ký (sheet) ghi lại: thiết bị, trang mở từ lúc nào, web đang hiện lịch gì
+      const PAGE_OPENED = new Date();
+      let SCHED_LOADED_AT = null;
+      let SCHED_SHOWN = null;
+      const hhmmDM = (d) =>
+        d ? String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0") + " " + fmtDM(d) : "";
+      function clientInfo() {
+        return {
+          ua: navigator.userAgent,
+          openedAt: "mở " + hhmmDM(PAGE_OPENED),
+          loadedAt: SCHED_LOADED_AT ? "tải lịch " + hhmmDM(SCHED_LOADED_AT) : "chưa tải lịch",
+          shown: SCHED_SHOWN,
+        };
+      }
+
       let schedReq = 0; // chỉ nhận response của lần tải mới nhất (đổi tên liên tục)
       async function loadSchedule() {
         const name = $("schedName").value;
         const hint = $("schedHint");
         const my = ++schedReq;
+        SCHED_LOADED_AT = null; // không để log mang lịch của lần tải / người trước
+        SCHED_SHOWN = null;
         if (!name) {
           renderSchedDays(null);
           setSchedBusy(false);
@@ -1389,12 +1449,24 @@
         setSchedBusy(true);
         try {
           const res = await fetch(
-            API_URL + "?action=schedule&name=" + encodeURIComponent(name),
+            API_URL +
+              "?action=schedule&name=" +
+              encodeURIComponent(name) +
+              (SCHED_MODE === "this" && REOPEN ? "&week=" + REOPEN.week : ""),
           );
           const data = await res.json();
           if (my !== schedReq) return;
           if (data.status !== "success") throw new Error(data.message);
+          REOPEN = data.reopen || null;
+          if (SCHED_MODE === "this" && (!REOPEN || data.week !== REOPEN.week)) {
+            SCHED_MODE = "next"; // admin đã đóng / hết hạn mở lại
+            showToast("Đăng ký bổ sung tuần này đã đóng.", false);
+          }
+          updateWeekToggle();
           SCHED_WEEK = data.week;
+          SCHED_FROM = data.fromDay || 0;
+          SCHED_LOADED_AT = new Date();
+          SCHED_SHOWN = data.days;
           renderSchedDays(data.days);
           hint.textContent = data.registered
             ? schedSummary(data.days, data.updatedAt)
@@ -1415,9 +1487,14 @@
         const days = [...document.querySelectorAll(".sched-day")].map(
           (c) => c.checked,
         );
+        if (SCHED_MODE === "this" && !SCHED_WEEK)
+          return showToast("Chưa tải được lịch tuần này — chọn lại tên rồi thử lại.", false);
         if (
-          !days.some(Boolean) &&
-          !confirm("Bạn chưa tick ngày nào — lưu thành KHÔNG đi buổi nào tuần sau?")
+          !days.slice(SCHED_FROM).some(Boolean) &&
+          !confirm(
+            "Bạn chưa tick ngày nào — lưu thành KHÔNG đi buổi nào " +
+              (SCHED_MODE === "this" ? "các ngày còn lại tuần này?" : "tuần sau?"),
+          )
         )
           return;
         const btn = $("schedSubmit");
@@ -1432,6 +1509,7 @@
               name: name,
               week: SCHED_WEEK || isoOf(nextMonday()),
               days: days,
+              client: clientInfo(),
             }),
           });
           const data = await res.json();
@@ -1439,9 +1517,18 @@
             data.message || (data.status === "success" ? "Đã lưu." : "Lỗi."),
             data.status === "success",
           );
+          if (data.code === "WEEK_CHANGED") {
+            // Trang mở từ hôm trước (VD tối CN, lưu sau 0h) -> tải lại tuần mới, KHÔNG tự lưu
+            SCHED_MODE = "next";
+            SCHED_WEEK = "";
+            SCHED_FROM = 0;
+            updateWeekToggle();
+            loadSchedule();
+          }
           if (data.status === "success") {
             // Server đọc lại Sheet sau khi ghi -> hiển thị đúng cái đã lưu (làm bằng chứng)
             SCHED_WEEK = data.week || SCHED_WEEK;
+            SCHED_FROM = data.fromDay || 0;
             renderSchedDays(data.days || days);
             $("schedHint").textContent = schedSummary(
               data.days || days,
@@ -1630,6 +1717,8 @@
           const res = await fetch(API_URL + "?action=config");
           const data = await res.json();
           if (data.status === "success") {
+            REOPEN = data.reopen || null;
+            updateWeekToggle();
             applyBackground(data.bgUrl);
             $("bgUrlInput").value = data.bgUrl || "";
           }
