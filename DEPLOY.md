@@ -4,7 +4,23 @@ Làm lần lượt **A → B → C**. Backend (Apps Script) và Frontend (GitHub
 
 ---
 
-## A. Backend (Google Apps Script)
+## ⚡ Cách nhanh: deploy bằng script (khuyên dùng)
+
+Setup 1 lần: bật Apps Script API tại https://script.google.com/home/usersettings →
+`bash scripts/gas.sh login` (tài khoản chủ Sheet) → ghi `SCRIPT_ID=...` (Project Settings) vào `scripts/gas.env`.
+
+```bash
+bash scripts/gas.sh deploy        # test → backup bản đang chạy → push → version mới → deploy → health check
+bash scripts/gas.sh versions      # xem các version
+bash scripts/gas.sh rollback 12   # quay về version 12, URL giữ nguyên
+bash scripts/check-api.sh         # kiểm tra API đang chạy (chỉ đọc)
+```
+
+CI (GitHub Actions) chặn merge nếu `index.html` gọi action mà `Code.gs` không có, hoặc test backend fail.
+
+---
+
+## A. Backend (Google Apps Script) — cách thủ công
 
 1. Mở Google Sheet → **Extensions → Apps Script**
 2. Xoá hết code cũ → dán **toàn bộ** `apps-script/Code.gs` → **Ctrl+S**
