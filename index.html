@@ -367,7 +367,7 @@
               class="mb-2 hidden grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 text-xs font-semibold"
             >
               <button data-mode="next" class="sched-mode rounded-lg px-2 py-1.5 transition">Tuần sau</button>
-              <button data-mode="this" class="sched-mode rounded-lg px-2 py-1.5 transition">Tuần này (mở lại)</button>
+              <button data-mode="this" class="sched-mode rounded-lg px-2 py-1.5 transition">Tuần này (đang mở)</button>
             </div>
             <p class="mb-3 text-xs text-slate-500">
               Tuần <span id="schedWeekLabel" class="font-semibold text-brand-700"></span>.
@@ -1043,7 +1043,7 @@
           const res = await fetch(API_URL, {
             method: "POST",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify(payload),
+            body: JSON.stringify({ ...payload, client: clientInfo() }),
           });
           const data = await res.json();
           if (data.status === "success") {
@@ -1349,7 +1349,7 @@
         });
         $("schedTitle").textContent =
           SCHED_MODE === "this" && REOPEN
-            ? "📅 Đăng ký bổ sung tuần này (mở đến " + REOPEN.until + ")"
+            ? "📅 Đăng ký lại tuần này (quản lý đang mở)"
             : "📅 Đăng ký lịch tập tuần sau";
       }
       document.querySelectorAll(".sched-mode").forEach((b) =>
@@ -1417,11 +1417,28 @@
         );
       }
 
+      // Gửi kèm để Nhật ký (sheet) ghi lại: thiết bị, trang mở từ lúc nào, web đang hiện lịch gì
+      const PAGE_OPENED = new Date();
+      let SCHED_LOADED_AT = null;
+      let SCHED_SHOWN = null;
+      const hhmmDM = (d) =>
+        d ? String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0") + " " + fmtDM(d) : "";
+      function clientInfo() {
+        return {
+          ua: navigator.userAgent,
+          openedAt: "mở " + hhmmDM(PAGE_OPENED),
+          loadedAt: SCHED_LOADED_AT ? "tải lịch " + hhmmDM(SCHED_LOADED_AT) : "chưa tải lịch",
+          shown: SCHED_SHOWN,
+        };
+      }
+
       let schedReq = 0; // chỉ nhận response của lần tải mới nhất (đổi tên liên tục)
       async function loadSchedule() {
         const name = $("schedName").value;
         const hint = $("schedHint");
         const my = ++schedReq;
+        SCHED_LOADED_AT = null; // không để log mang lịch của lần tải / người trước
+        SCHED_SHOWN = null;
         if (!name) {
           renderSchedDays(null);
           setSchedBusy(false);
@@ -1448,6 +1465,8 @@
           updateWeekToggle();
           SCHED_WEEK = data.week;
           SCHED_FROM = data.fromDay || 0;
+          SCHED_LOADED_AT = new Date();
+          SCHED_SHOWN = data.days;
           renderSchedDays(data.days);
           hint.textContent = data.registered
             ? schedSummary(data.days, data.updatedAt)
@@ -1490,6 +1509,7 @@
               name: name,
               week: SCHED_WEEK || isoOf(nextMonday()),
               days: days,
+              client: clientInfo(),
             }),
           });
           const data = await res.json();

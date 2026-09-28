@@ -105,9 +105,10 @@ function load(members) {
     UrlFetchApp: { fetch() {} },
     ScriptApp: { getProjectTriggers: () => [] },
     Logger: { log() {} },
+    Session: { getActiveUser: () => ({ getEmail: () => "admin@lts" }) },
   };
   const api = new Function(...Object.keys(env), SRC +
-    "\nreturn { doGet, doPost, mergeMisplacedBlocks, auditWeekBlocks, createWeekBlock_, formatMatrixSheet_, reopenThisWeek };")(...Object.values(env));
+    "\nreturn { doGet, doPost, mergeMisplacedBlocks, auditWeekBlocks, createWeekBlock_, formatMatrixSheet_, reopenThisWeek, lockThisWeek };")(...Object.values(env));
   const m = ss.insertSheet("Members");
   m.d = [["Tên"]].concat(members.map((x) => [x]));
   const parse = (o) => JSON.parse(o.getContent());
@@ -145,7 +146,7 @@ test("Lưu 2 lần = ghi đè, Nhật ký ghi cả 2 lần", () => {
   assert.deepStrictEqual(s.get({ action: "schedule", name: "Yến Thư" }).days, [false, true, false, true, false, false, false]);
   const l = logs(s);
   assert.strictEqual(l.length, 2);
-  assert.match(l[1][3], /tuần 2026-09-28: T3, T5/);
+  assert.match(l[1][3], /tuần 2026-09-28 \| trước: T2,T3 \| web hiện: \? \| gửi: T3,T5 \| đã lưu: T3,T5/);
   assert.match(l[1][4], /^success/);
 });
 
@@ -308,46 +309,41 @@ test("Audit: ô tiêu đề tuần bị gõ đè thành chữ -> vẫn tìm th�
   assert.ok(sh.d[titleIdx][0] instanceof Date, "tiêu đề được ghi lại thành Date");
 });
 
-test("Mở lại tuần này: chỉ sửa được từ hôm nay, ngày đã qua giữ nguyên; hết hạn tự đóng", () => {
+test("Mở lại tuần này: admin Mở -> ai cũng đăng ký lại được từ hôm nay; ngày đã qua giữ nguyên; Khoá -> đóng", () => {
   const s = load(MEMBERS);
   s.at("2026-09-27T12:00:00+07:00");
-  reg(s, "Ebi", "2026-09-28", [true, false, false, false, false, false, false]); // T2 đã ĐK từ trước
+  reg(s, "Ebi", "2026-09-28", [true, false, false, false, false, false, false]); // T2 ĐK từ trước
   s.at("2026-09-29T10:00:00+07:00"); // Thứ 3
   assert.strictEqual(s.get({ action: "config" }).reopen, null);
-  s.prompts.push("20:00");
+  assert.strictEqual(reg(s, "Yến Thư", "2026-09-28", W).code, "WEEK_CHANGED", "chưa mở thì không nhận");
   s.api.reopenThisWeek();
-  assert.match(s.alerts.pop(), /Đã mở lại đăng ký tuần 28\/09 đến 29\/09 20:00/);
-  const cfg = s.get({ action: "config" }).reopen;
-  assert.deepStrictEqual(cfg, { week: "2026-09-28", fromDay: 1, until: "29/09 20:00" });
+  assert.match(s.alerts.pop(), /Đã MỞ đăng ký lại tuần 28\/09.*từ hôm nay \(T3\)/s);
+  assert.deepStrictEqual(s.get({ action: "config" }).reopen, { week: "2026-09-28", fromDay: 1, until: "05/10 00:00" });
   const g = s.get({ action: "schedule", name: "Ebi", week: "2026-09-28" });
   assert.strictEqual(g.week, "2026-09-28");
   assert.strictEqual(g.fromDay, 1);
-  // cố bỏ tick T2 (đã qua) + tick T3, T5
-  const r = reg(s, "Ebi", "2026-09-28", [false, true, false, true, false, false, false]);
+  const r = reg(s, "Ebi", "2026-09-28", [false, true, false, true, false, false, false]); // cố bỏ T2 đã qua
   assert.strictEqual(r.status, "success", r.message);
   assert.match(r.message, /\(mở lại\)/);
   assert.deepStrictEqual(r.days, [true, true, false, true, false, false, false], "T2 giữ nguyên");
-  // tuần sau vẫn đăng ký bình thường song song
-  assert.strictEqual(reg(s, "Ebi", "2026-10-05", W).status, "success");
-  // hết hạn
-  s.at("2026-09-29T20:01:00+07:00");
-  assert.strictEqual(reg(s, "Yến Thư", "2026-09-28", W).code, "WEEK_CHANGED");
-  assert.strictEqual(s.get({ action: "schedule", name: "Ebi", week: "2026-09-28" }).week, "2026-10-05");
+  assert.strictEqual(reg(s, "Yến Thư", "2026-09-28", W).status, "success", "mọi thành viên");
+  assert.strictEqual(reg(s, "Ebi", "2026-10-05", W).status, "success", "tuần sau vẫn song song");
+  s.api.lockThisWeek();
   assert.strictEqual(s.get({ action: "config" }).reopen, null);
+  assert.strictEqual(reg(s, "Quỳnh Chi", "2026-09-28", W).code, "WEEK_CHANGED");
+  const adm = logs(s).filter((l) => l[1] === "admin").map((l) => l[3]);
+  assert.deepStrictEqual(adm, ["mở đăng ký tuần 2026-09-28", "khoá đăng ký tuần 2026-09-28"]);
 });
 
-test("Mở lại: chặn hạn ở quá khứ / quá Chủ nhật; để trống = đóng", () => {
+test("Mở lại: quên khoá -> tự khoá khi hết Chủ nhật; REOPEN tuần cũ không có hiệu lực", () => {
   const s = load(MEMBERS);
-  s.at("2026-09-29T10:00:00+07:00");
-  s.prompts.push("09:00"); s.api.reopenThisWeek();
-  assert.match(s.alerts.pop(), /tương lai/);
-  s.prompts.push("05/10 10:00"); s.api.reopenThisWeek();
-  assert.match(s.alerts.pop(), /Chủ nhật/);
-  s.prompts.push("04/10 23:00"); s.api.reopenThisWeek();
+  s.at("2026-09-28T09:00:00+07:00"); // Thứ 2: mở = cả tuần
+  s.api.reopenThisWeek();
+  assert.strictEqual(s.get({ action: "config" }).reopen.fromDay, 0);
+  s.at("2026-10-04T23:59:00+07:00");
   assert.ok(s.get({ action: "config" }).reopen);
-  s.prompts.push(""); s.api.reopenThisWeek();
+  s.at("2026-10-05T00:00:30+07:00");
   assert.strictEqual(s.get({ action: "config" }).reopen, null);
-  // REOPEN của tuần trước không có hiệu lực tuần này
   s.props.REOPEN = JSON.stringify({ week: "2026-09-21", until: Date.parse("2026-12-31T00:00:00+07:00") });
   assert.strictEqual(s.get({ action: "config" }).reopen, null);
 });
@@ -361,4 +357,25 @@ test("Audit: tên trong Members/Sheet gõ dạng NFD, web gửi NFC -> vẫn đ�
   const sh = s.sheets["Tháng 10/2026"];
   assert.strictEqual(sh.d.filter((x) => x && String(x[0]).normalize("NFC") === "Quỳnh Chi").length, 1);
   assert.deepStrictEqual(s.get({ action: "schedule", name: "Quỳnh Chi" }).days, W);
+});
+
+test("Nhật ký: ghi trước / web hiện / gửi / đã lưu + thiết bị + giờ mở trang", () => {
+  const s = load(MEMBERS);
+  s.at("2026-09-27T21:00:00+07:00");
+  reg(s, "Ebi", "2026-09-28", [true, false, true, false, false, false, false]);
+  const r = s.post({
+    action: "registerSchedule", name: "Ebi", week: "2026-09-28",
+    days: [false, false, false, false, false, false, false],
+    client: {
+      ua: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 [FBAN/MessengerForiOS;FBAV/480.0]",
+      openedAt: "mở 20:55 27/09", loadedAt: "tải lịch 20:58 27/09",
+      shown: [false, false, false, false, false, false, false],
+    },
+  });
+  assert.strictEqual(r.status, "success");
+  const last = logs(s).at(-1);
+  assert.match(last[3], /trước: T2,T4 \| web hiện: ∅ \| gửi: ∅ \| đã lưu: ∅/);
+  assert.match(last[5], /^iOS · Messenger\/Facebook/);
+  assert.strictEqual(last[6], "mở 20:55 27/09 / tải lịch 20:58 27/09");
+  assert.strictEqual(s.sheets["Nhật ký"].d[0].length, 7, "header 7 cột");
 });

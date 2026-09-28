@@ -63,6 +63,7 @@ const SCHED = { WEEK: 1, NAME: 2, FIRST: 3, DAYS: 7 };
 const SCHED_MARK = '✓';
 const LEGACY_SCHEDULE_SHEET = 'Lịch tập';
 const LOG_SHEET = 'Nhật ký';
+const LOG_HEADERS = ['Thời gian (VN)', 'Thao tác', 'Tên', 'Chi tiết', 'Kết quả', 'Thiết bị', 'Trang mở lúc / tải lịch lúc'];
 
 function mxCol_(dayIdx, field) { return 2 + dayIdx * MX.DAY_COLS + field; }
 
@@ -1081,6 +1082,7 @@ function registerSchedule_(body) {
     message: 'Tuần bạn đang đăng ký đã chốt. Đã chuyển sang tuần sau (bắt đầu ' + dmy_(next) + ') — tick lại rồi Lưu.',
   };
 
+  const before = readScheduleDays_(target, name); // để Nhật ký ghi lại lịch trước khi ghi đè
   const loc = getOrCreateWeekBlock_(target);
   const row = ensureMemberRow_(loc.sheet, loc.block, name);
   const range = loc.sheet.getRange(row, 2, 1, MX.DAYS * MX.DAY_COLS);
@@ -1097,7 +1099,7 @@ function registerSchedule_(body) {
 
   const picked = DAY_NAMES.filter(function (_, i) { return saved[i]; });
   return {
-    status: 'success', week: isoDate_(target), days: saved, fromDay: fromDay,
+    status: 'success', week: isoDate_(target), days: saved, before: before, fromDay: fromDay,
     updatedAt: Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'dd/MM/yyyy HH:mm'),
     message: 'Đã lưu lịch tuần ' + dmy_(target) + (reopened ? ' (mở lại)' : '') + ': ' +
       (picked.length ? picked.join(', ') : 'không đi buổi nào') + '.',
@@ -1124,35 +1126,32 @@ function reopenInfo_(r) {
   };
 }
 
-// Menu admin: mở lại đăng ký tuần hiện tại đến 1 mốc giờ (tối đa hết Chủ nhật tuần này)
+// Menu admin: MỞ đăng ký lại tuần hiện tại cho mọi thành viên — mở đến khi admin KHOÁ,
+// tự khoá khi hết Chủ nhật (quên khoá cũng không lan sang tuần sau)
 function reopenThisWeek() {
-  const ui = SpreadsheetApp.getUi();
-  const props = PropertiesService.getScriptProperties();
-  const cur = reopenInfo_(getReopen_());
-  const res = ui.prompt('Mở lại đăng ký tuần này',
-    (cur ? 'Đang mở đến ' + cur.until + '.\n' : 'Đang đóng.\n') +
-    'Nhập hạn đóng: "HH:mm" (hôm nay) hoặc "dd/MM HH:mm". Để trống = ĐÓNG ngay.\n' +
-    'Thành viên chỉ tick được các ngày từ hôm nay trở đi; ngày đã qua giữ nguyên.',
-    ui.ButtonSet.OK_CANCEL);
-  if (res.getSelectedButton() !== ui.Button.OK) return;
-  const text = res.getResponseText().trim();
-  if (!text) { props.deleteProperty('REOPEN'); ui.alert('✅ Đã đóng đăng ký tuần này.'); return; }
-
   const today = todayVN_();
-  const m = /^(?:(\d{1,2})\/(\d{1,2})\s+)?(\d{1,2}):(\d{2})$/.exec(text);
-  if (!m) { ui.alert('Sai định dạng. VD: 20:00 hoặc 30/09 21:00'); return; }
-  const dd = m[1] ? Number(m[1]) : today.getDate();
-  const mm = m[2] ? Number(m[2]) : today.getMonth() + 1;
-  const iso = today.getFullYear() + '-' + pad2_(mm) + '-' + pad2_(dd) + 'T' + pad2_(Number(m[3])) + ':' + m[4] + ':00+07:00';
-  const until = new Date(iso).getTime();
   const thisMon = weekStart_(today);
-  const endOfWeek = new Date(isoDate_(new Date(thisMon.getFullYear(), thisMon.getMonth(), thisMon.getDate() + 7)) + 'T00:00:00+07:00').getTime();
-  if (!(until > Date.now())) { ui.alert('Hạn đóng phải ở tương lai.'); return; }
-  if (until > endOfWeek) { ui.alert('Chỉ mở được tối đa đến hết Chủ nhật tuần này.'); return; }
-  props.setProperty('REOPEN', JSON.stringify({ week: isoDate_(thisMon), until: until }));
-  ui.alert('✅ Đã mở lại đăng ký tuần ' + dmy_(thisMon).slice(0, 5) + ' đến ' +
-    Utilities.formatDate(new Date(until), CONFIG.TIMEZONE, 'dd/MM HH:mm') + '.\n' +
-    'Trên web, tab Lịch tuần sẽ có thêm lựa chọn "Tuần này".');
+  const nextMon = new Date(thisMon.getFullYear(), thisMon.getMonth(), thisMon.getDate() + 7);
+  const until = new Date(isoDate_(nextMon) + 'T00:00:00+07:00').getTime();
+  PropertiesService.getScriptProperties()
+    .setProperty('REOPEN', JSON.stringify({ week: isoDate_(thisMon), until: until }));
+  logAdmin_('mở đăng ký tuần ' + isoDate_(thisMon));
+  SpreadsheetApp.getUi().alert('✅ Đã MỞ đăng ký lại tuần ' + dmy_(thisMon).slice(0, 5) + ' cho mọi thành viên.\n' +
+    'Tick được từ hôm nay (' + DAY_NAMES[(today.getDay() + 6) % 7] + ') trở đi; ngày đã qua giữ nguyên.\n' +
+    'Tự khoá khi hết Chủ nhật, hoặc khoá sớm bằng menu "Khoá đăng ký tuần này".');
+}
+
+function lockThisWeek() {
+  PropertiesService.getScriptProperties().deleteProperty('REOPEN');
+  logAdmin_('khoá đăng ký tuần ' + isoDate_(weekStart_(todayVN_())));
+  SpreadsheetApp.getUi().alert('🔒 Đã KHOÁ đăng ký tuần này. Tuần sau vẫn đăng ký bình thường.');
+}
+
+function logAdmin_(what) {
+  try {
+    getLogSheet_().appendRow([Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm:ss'),
+      'admin', Session.getActiveUser().getEmail() || '', what, 'OK', '', '']);
+  } catch (ignore) {}
 }
 
 /* ============================================================
@@ -1164,33 +1163,59 @@ function getLogSheet_() {
   let sh = ss.getSheetByName(LOG_SHEET);
   if (!sh) {
     sh = ss.insertSheet(LOG_SHEET);
-    const headers = ['Thời gian (VN)', 'Thao tác', 'Tên', 'Chi tiết', 'Kết quả'];
-    sh.getRange(1, 1, 1, headers.length).setValues([headers]);
-    styleHeader_(sh.getRange(1, 1, 1, headers.length));
     sh.setFrozenRows(1);
     sh.getRange('A:A').setNumberFormat('@');
+  }
+  // Sheet tạo từ bản trước chỉ có 5 cột -> bổ sung header cột mới (chỉ ghi dòng 1)
+  if (String(sh.getRange(1, LOG_HEADERS.length).getValue()).trim() !== LOG_HEADERS[LOG_HEADERS.length - 1]) {
+    sh.getRange(1, 1, 1, LOG_HEADERS.length).setValues([LOG_HEADERS]);
+    styleHeader_(sh.getRange(1, 1, 1, LOG_HEADERS.length));
   }
   return sh;
 }
 
+function daysText_(days) {
+  if (!Array.isArray(days)) return '?';
+  const picked = DAY_NAMES.filter(function (_, i) { return days[i] === true; });
+  return picked.join(',') || '∅';
+}
+
+// Nhãn thiết bị ngắn từ User-Agent (trình duyệt trong app Messenger/Zalo hay gặp lỗi mạng/cache)
+function deviceOf_(ua) {
+  ua = String(ua || '');
+  if (!ua) return '';
+  const os = /iPhone|iPad/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android' : /Mac OS X/.test(ua) ? 'Mac'
+    : /Windows/.test(ua) ? 'Windows' : 'Khác';
+  const app = /FBAN|FBAV|FB_IAB|Messenger/.test(ua) ? 'Messenger/Facebook' : /Zalo/.test(ua) ? 'Zalo'
+    : /Instagram/.test(ua) ? 'Instagram' : /CriOS|Chrome/.test(ua) ? 'Chrome' : /Safari/.test(ua) ? 'Safari'
+    : /Firefox|FxiOS/.test(ua) ? 'Firefox' : 'Trình duyệt khác';
+  return os + ' · ' + app + ' — ' + ua.slice(0, 120);
+}
+
 function logPost_(body, out) {
   try {
+    let r = {};
+    try { r = JSON.parse(out.getContent()); } catch (ignore) {}
     let detail = '';
     if (body.action === 'registerSchedule') {
-      const days = Array.isArray(body.days) ? body.days : [];
-      const picked = DAY_NAMES.filter(function (_, i) { return days[i]; });
-      detail = 'tuần ' + String(body.week || '?') + ': ' + (picked.join(', ') || '(không ngày nào)');
+      // trước (trên Sheet) → web hiển thị lúc tải → user gửi → Sheet sau khi lưu: đủ để biết mất lịch ở bước nào
+      const c = body.client || {};
+      detail = 'tuần ' + String(body.week || '?') +
+        ' | trước: ' + daysText_(r.before) +
+        ' | web hiện: ' + daysText_(c.shown) +
+        ' | gửi: ' + daysText_(body.days) +
+        ' | đã lưu: ' + (r.status === 'success' ? daysText_(r.days) : '—');
     } else if (body.action === 'checkin') {
       detail = String(body.date || '') + ' ' + String(body.time || '(xoá)');
     } else {
       detail = [body.type, body.date, body.arrivalTime, body.reason].filter(function (x) { return x; }).join(' | ');
     }
-    let result = '';
-    try { const r = JSON.parse(out.getContent()); result = r.status + ': ' + (r.message || ''); }
-    catch (ignore) { result = '?'; }
+    const result = r.status ? r.status + ': ' + (r.message || '') : '?';
+    const c = body.client || {};
     getLogSheet_().appendRow([
       Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm:ss'),
       String(body.action || 'request'), String(body.name || ''), detail, result,
+      deviceOf_(c.ua), [c.openedAt, c.loadedAt].filter(function (x) { return x; }).join(' / '),
     ]);
   } catch (ignore) {}
 }
@@ -1454,7 +1479,8 @@ function onOpen() {
     .addItem('Đồng bộ Members → sheet Tháng', 'syncMembers')
     .addItem('Đánh dấu vắng các ngày đã qua', 'markPastDays')
     .addItem('Bật tự đánh dấu hằng ngày (1h sáng)', 'enableDailyMark')
-    .addItem('Mở lại / đóng đăng ký tuần này', 'reopenThisWeek')
+    .addItem('Mở đăng ký lại tuần này', 'reopenThisWeek')
+    .addItem('Khoá đăng ký tuần này', 'lockThisWeek')
     .addItem('Kiểm tra block tuần nằm sai sheet', 'auditWeekBlocks')
     .addItem('Gộp block tuần nằm sai sheet (backfill)', 'mergeMisplacedBlocks')
     .addItem('Chuyển dữ liệu cũ → sheet Tháng', 'migrateToMatrix')

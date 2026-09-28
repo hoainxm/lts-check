@@ -67,9 +67,13 @@ User gửi ──► Sheet tháng "MM/YYYY" (Chờ duyệt)
 - **Nhật ký**: sheet `Nhật ký` ghi mọi lần gửi (đăng ký lịch, đơn, điểm danh — kể cả bị từ chối) kèm giờ VN → tra khi có khiếu nại.
 - Menu ⚙️ LTS → **Kiểm tra block tuần nằm sai sheet** / **Gộp block tuần nằm sai sheet (backfill)**: gộp dữ liệu block do bản code cũ
   tạo nhầm sheet về đúng chỗ, chỉ điền ô trống, không xoá block cũ.
-- **Mở lại đăng ký tuần này**: menu ⚙️ LTS → **Mở lại / đóng đăng ký tuần này** → nhập hạn (`20:00` hoặc `30/09 21:00`,
-  tối đa hết Chủ nhật; để trống = đóng). Web hiện thêm nút "Tuần này (mở lại)"; chỉ tick được từ hôm nay, ngày đã qua giữ nguyên;
-  hết hạn tự đóng. Lượt lưu ghi "(mở lại)" trong `Nhật ký`.
+- **Mở đăng ký lại tuần này**: menu ⚙️ LTS → **Mở đăng ký lại tuần này** / **Khoá đăng ký tuần này**.
+  Khi mở: web có nút "Tuần này (đang mở)" cạnh "Tuần sau" (tuần sau vẫn đăng ký song song); mọi thành viên tick được
+  từ hôm nay trở đi, ngày đã qua giữ nguyên (tránh bỏ ✓ ngày đã qua để né ✗). Quên khoá thì tự khoá khi hết Chủ nhật.
+- **Nhật ký** (sheet `Nhật ký`) — mỗi lần Lưu lịch ghi: `trước` (Sheet trước khi lưu) | `web hiện` (lịch web đang hiển thị lúc
+  user bấm) | `gửi` | `đã lưu`, kèm thiết bị/trình duyệt (VD `iOS · Messenger/Facebook`) và giờ mở trang / giờ tải lịch.
+  Đọc: `web hiện: ?` = user bấm Lưu khi lịch chưa tải xong; `gửi: ∅` = gửi lịch rỗng; không có dòng nào = request không tới server.
+  Admin Mở/Khoá cũng được ghi (kèm email).
 - Menu **Chuyển dữ liệu cũ → sheet Tháng** tự chặn khi đã có sheet Tháng (chạy lại sẽ xoá sạch dữ liệu mới).
 - ⚠️ `apps-script/Code.gs` trong repo là **nguồn duy nhất**. Sửa trực tiếp trong trình soạn Apps Script thì phải copy ngược về repo ngay, nếu không lần deploy sau sẽ làm mất tính năng.
 - **Thống kê / Tổng kết** chỉ tính bản **Đã duyệt**.
