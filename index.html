@@ -919,8 +919,15 @@
           hint.textContent = "✅ Hợp lệ.";
           hint.className = "mt-1 text-xs text-green-600";
         } else {
+          const e = earliestOffDate();
           hint.textContent =
-            "❌ Đơn nghỉ phải gửi trước 0h của ngày nghỉ — sớm nhất là ngày mai.";
+            "❌ Đơn nghỉ phải gửi trước 0h của ngày nghỉ — hôm nay " +
+            fmtDM(new Date()) +
+            ", sớm nhất là ngày " +
+            e.slice(8, 10) +
+            "/" +
+            e.slice(5, 7) +
+            ".";
           hint.className = "mt-1 text-xs text-rose-600";
         }
       }
@@ -1348,29 +1355,56 @@
         }
       }
 
+      // Khóa tick + nút Lưu trong lúc tải: trước đây user tick xong, response về
+      // vẽ lại ô trống -> bấm Lưu thành lịch rỗng mà vẫn báo "Đã lưu".
+      function setSchedBusy(on) {
+        document
+          .querySelectorAll(".sched-day")
+          .forEach((c) => (c.disabled = on));
+        $("schedDays").classList.toggle("opacity-50", on);
+        $("schedSubmit").disabled = on;
+      }
+      function schedSummary(days, updatedAt) {
+        const picked = DAY_LABELS.filter((_, i) => days && days[i]);
+        return (
+          "✅ Đã đăng ký: " +
+          (picked.length ? picked.join(", ") : "không đi buổi nào") +
+          (updatedAt ? " (lưu lúc " + updatedAt + ")" : "") +
+          ". Sửa rồi bấm Lưu để ghi đè."
+        );
+      }
+
+      let schedReq = 0; // chỉ nhận response của lần tải mới nhất (đổi tên liên tục)
       async function loadSchedule() {
         const name = $("schedName").value;
         const hint = $("schedHint");
+        const my = ++schedReq;
         if (!name) {
           renderSchedDays(null);
+          setSchedBusy(false);
           hint.textContent = "";
           return;
         }
         hint.textContent = "Đang tải lịch đã đăng ký…";
+        setSchedBusy(true);
         try {
           const res = await fetch(
             API_URL + "?action=schedule&name=" + encodeURIComponent(name),
           );
           const data = await res.json();
+          if (my !== schedReq) return;
           if (data.status !== "success") throw new Error(data.message);
           SCHED_WEEK = data.week;
           renderSchedDays(data.days);
           hint.textContent = data.registered
-            ? "✏️ Đã có lịch tuần này — sửa rồi bấm Lưu để ghi đè."
+            ? schedSummary(data.days, data.updatedAt)
             : "Chưa đăng ký tuần này.";
         } catch (e) {
+          if (my !== schedReq) return;
           renderSchedDays(null);
           hint.textContent = "Lỗi tải lịch, vẫn có thể tick và lưu mới.";
+        } finally {
+          if (my === schedReq) setSchedBusy(false);
         }
       }
       $("schedName").addEventListener("change", loadSchedule);
@@ -1381,6 +1415,11 @@
         const days = [...document.querySelectorAll(".sched-day")].map(
           (c) => c.checked,
         );
+        if (
+          !days.some(Boolean) &&
+          !confirm("Bạn chưa tick ngày nào — lưu thành KHÔNG đi buổi nào tuần sau?")
+        )
+          return;
         const btn = $("schedSubmit");
         btn.disabled = true;
         $("schedSubmitText").textContent = "Đang lưu…";
@@ -1400,7 +1439,15 @@
             data.message || (data.status === "success" ? "Đã lưu." : "Lỗi."),
             data.status === "success",
           );
-          if (data.status === "success") loadSchedule(); // cập nhật lại hint + trạng thái tick
+          if (data.status === "success") {
+            // Server đọc lại Sheet sau khi ghi -> hiển thị đúng cái đã lưu (làm bằng chứng)
+            SCHED_WEEK = data.week || SCHED_WEEK;
+            renderSchedDays(data.days || days);
+            $("schedHint").textContent = schedSummary(
+              data.days || days,
+              data.updatedAt,
+            );
+          }
         } catch (e) {
           showToast("Lỗi kết nối, thử lại sau.", false);
         } finally {

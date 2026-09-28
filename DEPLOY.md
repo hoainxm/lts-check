@@ -4,7 +4,23 @@ Làm lần lượt **A → B → C**. Backend (Apps Script) và Frontend (GitHub
 
 ---
 
-## A. Backend (Google Apps Script)
+## ⚡ Cách nhanh: deploy bằng script (khuyên dùng)
+
+Setup 1 lần: bật Apps Script API tại https://script.google.com/home/usersettings →
+`bash scripts/gas.sh login` (tài khoản chủ Sheet) → ghi `SCRIPT_ID=...` (Project Settings) vào `scripts/gas.env`.
+
+```bash
+bash scripts/gas.sh deploy        # test → backup bản đang chạy → push → version mới → deploy → health check
+bash scripts/gas.sh versions      # xem các version
+bash scripts/gas.sh rollback 12   # quay về version 12, URL giữ nguyên
+bash scripts/check-api.sh         # kiểm tra API đang chạy (chỉ đọc)
+```
+
+CI (GitHub Actions) chặn merge nếu `index.html` gọi action mà `Code.gs` không có, hoặc test backend fail.
+
+---
+
+## A. Backend (Google Apps Script) — cách thủ công
 
 1. Mở Google Sheet → **Extensions → Apps Script**
 2. Xoá hết code cũ → dán **toàn bộ** `apps-script/Code.gs` → **Ctrl+S**
@@ -45,6 +61,11 @@ User gửi ──► Sheet tháng "MM/YYYY" (Chờ duyệt)
                  └─ Admin ❌ Từ chối ─► Từ chối (không tính)
 ```
 - **Mỗi tháng 1 sheet** tên `07/2026`, `08/2026`… tự tạo khi có yêu cầu tháng đó.
+- **Lịch tuần**: sheet `Lịch tuần` (Tuần | Tên | T2..CN | Cập nhật lúc) — chỉ đăng ký tuần sau, sang Thứ 2 khóa.
+  Mọi lần bấm Lưu (kể cả bị từ chối) ghi vào `Log lịch` → tra khi có người khiếu nại "đã đăng ký mà không thấy".
+- **Điểm danh**: sheet `Điểm danh` (Ngày | Tên | Giờ đến | Cập nhật lúc).
+- Ngày/tuần/hạn nộp đơn nghỉ tính theo **giờ VN phía server**, không phụ thuộc múi giờ project Apps Script hay đồng hồ máy user.
+- ⚠️ `apps-script/Code.gs` trong repo là **nguồn duy nhất**. Sửa trực tiếp trong trình soạn Apps Script thì phải copy ngược về repo ngay, nếu không lần deploy sau sẽ làm mất tính năng.
 - **Thống kê / Tổng kết** chỉ tính bản **Đã duyệt**.
 - **Lịch sử** hiện mọi yêu cầu của 1 người (mọi trạng thái, mới nhất trước).
 

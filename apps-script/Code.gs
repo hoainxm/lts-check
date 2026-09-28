@@ -8,6 +8,12 @@
  *   - Admin Duyệt -> Trạng thái = "Đã duyệt"; Từ chối -> "Từ chối".
  *   - Thống kê / Tổng kết: chỉ tính bản "Đã duyệt".
  *   - Lịch sử: mọi bản của 1 người (mọi trạng thái).
+ *   - Lịch tuần: sheet "Lịch tuần", 1 dòng / (tuần, người). Chỉ đăng ký cho TUẦN SAU,
+ *     sang Thứ 2 tuần đó thì khóa. Mọi lần lưu đều ghi thêm vào "Log lịch" (append-only)
+ *     để đối chiếu khi có khiếu nại "đã đăng ký mà không thấy".
+ *   - Điểm danh: sheet "Điểm danh", 1 dòng / (ngày, người).
+ *   - Mọi ngày/tuần tính theo giờ VN (CONFIG.TIMEZONE), lưu dạng text yyyy-MM-dd
+ *     -> không phụ thuộc múi giờ của project Apps Script.
  *
  * CÁCH DÙNG:
  * 1. setup() (menu ⚙️ LTS -> Setup) tạo sheet tháng hiện tại, Members, Tổng kết.
@@ -20,9 +26,13 @@
 const CONFIG = {
   MEMBERS_SHEET: 'Members',
   SUMMARY_SHEET: 'Tổng kết',
+  SCHEDULE_SHEET: 'Lịch tuần',
+  SCHEDULE_LOG_SHEET: 'Log lịch',
+  CHECKIN_SHEET: 'Điểm danh',
   PRACTICE_START_HOUR: 18,
   PRACTICE_START_MIN: 30,
   TIMEZONE: 'Asia/Ho_Chi_Minh',
+  TZ_OFFSET: '+07:00', // VN không có giờ mùa hè
   STATUSES: ['Chờ duyệt', 'Đã duyệt', 'Từ chối'],
   TYPES: ['Đi trễ', 'Nghỉ'],
   COLOR_PRIMARY: '#1d4ed8',
@@ -33,6 +43,12 @@ const CONFIG = {
 // Cột trong sheet tháng (1-based). Thời gian gửi tách 2 cột: Ngày gửi + Giờ gửi.
 const COL = { TS_DATE: 1, TS_TIME: 2, NAME: 3, TYPE: 4, DATE: 5, ARRIVAL: 6, LATE: 7, REASON: 8, STATUS: 9, NOTE: 10 };
 const MONTH_RE = /^(0[1-9]|1[0-2])\/\d{4}$/;
+const ISO_RE = /^\d{4}-\d{2}-\d{2}$/;
+const DAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+// Sheet "Lịch tuần": Tuần (Thứ 2) | Tên | T2..CN | Cập nhật lúc
+const SCOL = { WEEK: 1, NAME: 2, DAY0: 3, UPDATED: 10 };
+// Sheet "Điểm danh": Ngày | Tên | Giờ đến | Cập nhật lúc
+const KCOL = { DATE: 1, NAME: 2, TIME: 3, UPDATED: 4 };
 
 /* ============================================================
  * API ENDPOINTS
@@ -66,6 +82,25 @@ function doGet(e) {
       if (!checkPin_(p.pin)) return jsonResponse({ status: 'error', message: 'Sai mã PIN.' });
       return jsonResponse({ status: 'success', items: getPendingList_() });
     }
+    if (action === 'schedule') {
+      const name = String(p.name || '').trim();
+      if (!name) return jsonResponse({ status: 'error', message: 'Thiếu tên.' });
+      const week = nextWeekMonday_();
+      const found = findScheduleRow_(week, name);
+      return jsonResponse({
+        status: 'success',
+        week: week,
+        days: found ? found.days : [false, false, false, false, false, false, false],
+        registered: !!found,
+        updatedAt: found ? found.updatedAt : '',
+      });
+    }
+    if (action === 'rollcall') {
+      if (!checkPin_(p.pin)) return jsonResponse({ status: 'error', message: 'Sai mã PIN.' });
+      const date = String(p.date || '').trim();
+      if (!ISO_RE.test(date)) return jsonResponse({ status: 'error', message: 'Ngày không hợp lệ.' });
+      return jsonResponse({ status: 'success', date: date, list: getRollcall_(date) });
+    }
     return jsonResponse({ status: 'error', message: 'Unknown action: ' + action });
   } catch (err) {
     return jsonResponse({ status: 'error', message: 'Lỗi server: ' + err.message });
@@ -74,9 +109,20 @@ function doGet(e) {
 
 function doPost(e) {
   const lock = LockService.getScriptLock();
-  lock.tryLock(15000);
+  // Không lấy được lock mà vẫn ghi -> 2 người lưu cùng lúc có thể ghi đè/lệch dòng nhau
+  if (!lock.tryLock(15000))
+    return jsonResponse({ status: 'error', message: 'Hệ thống đang bận, thử lại sau vài giây.' });
   try {
     const body = JSON.parse(e.postData.contents);
+
+    // --- User: đăng ký lịch tập tuần sau ---
+    if (body.action === 'registerSchedule') return jsonResponse(registerSchedule_(body));
+
+    // --- Admin: điểm danh ---
+    if (body.action === 'checkin') {
+      if (!checkPin_(body.pin)) return jsonResponse({ status: 'error', message: 'Sai mã PIN.' });
+      return jsonResponse(saveCheckin_(body));
+    }
 
     // --- Admin: đổi hình nền ---
     if (body.action === 'setBackground') {
@@ -118,8 +164,17 @@ function doPost(e) {
 
     if (!name) return jsonResponse({ status: 'error', message: 'Thiếu tên thành viên.' });
     if (CONFIG.TYPES.indexOf(type) === -1) return jsonResponse({ status: 'error', message: 'Loại yêu cầu không hợp lệ.' });
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return jsonResponse({ status: 'error', message: 'Ngày không hợp lệ.' });
+    if (!ISO_RE.test(dateStr)) return jsonResponse({ status: 'error', message: 'Ngày không hợp lệ.' });
     if (!reason) return jsonResponse({ status: 'error', message: 'Thiếu lý do.' });
+
+    // Hạn nộp tính theo giờ VN phía server (không tin đồng hồ máy user)
+    const today = todayVN_();
+    if (type === 'Nghỉ' && dateStr <= today)
+      return jsonResponse({ status: 'error', message:
+        'Đơn nghỉ phải gửi trước 0h của ngày nghỉ — hôm nay ' + isoToDM_(today) +
+        ', sớm nhất là ngày ' + isoToDM_(isoAddDays_(today, 1)) + '.' });
+    if (type === 'Đi trễ' && dateStr < today)
+      return jsonResponse({ status: 'error', message: 'Không gửi đơn đi trễ cho ngày đã qua.' });
 
     let lateMinutes = '', arrivalDisplay = '';
     if (type === 'Đi trễ') {
@@ -131,8 +186,9 @@ function doPost(e) {
       arrivalDisplay = arrivalTime;
     }
 
-    const d = dateStr.split('-');
-    const appliedDate = new Date(Number(d[0]), Number(d[1]) - 1, Number(d[2]));
+    // Nửa đêm giờ VN — new Date(y, m, d) lấy múi giờ của project Apps Script,
+    // project khác múi VN thì ngày áp dụng / sheet tháng có thể lệch 1 ngày.
+    const appliedDate = new Date(dateStr + 'T00:00:00' + CONFIG.TZ_OFFSET);
     const sheet = getOrCreateMonthSheet_(monthSheetName_(appliedDate));
 
     if (isDuplicate_(sheet, name, type, appliedDate))
@@ -175,6 +231,254 @@ function getOrCreateMonthSheet_(name) {
 }
 
 /* ============================================================
+ * NGÀY THEO GIỜ VN (chuỗi yyyy-MM-dd, tính toán thuần chuỗi/UTC
+ * -> không lệch khi project Apps Script để múi giờ khác)
+ * ============================================================ */
+
+function todayVN_() { return Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'yyyy-MM-dd'); }
+function nowHHmmVN_() { return Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'HH:mm'); }
+function isoToUTC_(iso) { const p = iso.split('-'); return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])); }
+function isoAddDays_(iso, n) {
+  const d = isoToUTC_(iso);
+  d.setUTCDate(d.getUTCDate() + n);
+  return Utilities.formatDate(d, 'UTC', 'yyyy-MM-dd');
+}
+function weekdayIdx_(iso) { return (isoToUTC_(iso).getUTCDay() + 6) % 7; } // T2 = 0 … CN = 6
+function mondayOf_(iso) { return isoAddDays_(iso, -weekdayIdx_(iso)); }
+// Chủ nhật 27/09 -> 28/09; Thứ 2 28/09 -> 05/10
+function nextWeekMonday_() { return isoAddDays_(mondayOf_(todayVN_()), 7); }
+function isoToDM_(iso) { return iso.slice(8, 10) + '/' + iso.slice(5, 7); }
+// Ô ngày có thể là text "2026-09-28" hoặc Date (nếu ai đó sửa tay trong Sheet)
+function cellToIso_(v) {
+  if (v instanceof Date) return Utilities.formatDate(v, CONFIG.TIMEZONE, 'yyyy-MM-dd');
+  return String(v || '').trim();
+}
+function hhmmToMin_(s) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(s || '').trim());
+  return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+}
+
+/* ============================================================
+ * LỊCH TUẦN
+ * ============================================================ */
+
+function getScheduleSheet_() {
+  const ss = SpreadsheetApp.getActive();
+  let sh = ss.getSheetByName(CONFIG.SCHEDULE_SHEET);
+  if (!sh) {
+    sh = ss.insertSheet(CONFIG.SCHEDULE_SHEET);
+    const headers = ['Tuần (Thứ 2)', 'Tên'].concat(DAY_LABELS).concat(['Cập nhật lúc']);
+    sh.getRange(1, 1, 1, headers.length).setValues([headers]);
+    styleHeader_(sh.getRange(1, 1, 1, headers.length));
+    sh.setFrozenRows(1);
+    sh.getRange('A:A').setNumberFormat('@'); // tuần = text, không để Sheet tự đổi sang Date
+    sh.setColumnWidth(SCOL.NAME, 150);
+    sh.getRange(1, SCOL.DAY0, sh.getMaxRows(), 7).setHorizontalAlignment('center');
+  }
+  return sh;
+}
+
+function getScheduleLogSheet_() {
+  const ss = SpreadsheetApp.getActive();
+  let sh = ss.getSheetByName(CONFIG.SCHEDULE_LOG_SHEET);
+  if (!sh) {
+    sh = ss.insertSheet(CONFIG.SCHEDULE_LOG_SHEET);
+    const headers = ['Thời gian (VN)', 'Tên', 'Tuần (Thứ 2)', 'Ngày đăng ký', 'Kết quả'];
+    sh.getRange(1, 1, 1, headers.length).setValues([headers]);
+    styleHeader_(sh.getRange(1, 1, 1, headers.length));
+    sh.setFrozenRows(1);
+    sh.getRange('A:C').setNumberFormat('@');
+  }
+  return sh;
+}
+
+function logSchedule_(name, week, days, result) {
+  try {
+    const picked = DAY_LABELS.filter(function (_, i) { return days && days[i]; }).join(', ');
+    getScheduleLogSheet_().appendRow([
+      Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm:ss'),
+      name, week, picked || '(không ngày nào)', result,
+    ]);
+  } catch (ignore) {}
+}
+
+// Trả { row, days[7], updatedAt } hoặc null
+function findScheduleRow_(week, name) {
+  const sh = getScheduleSheet_();
+  if (sh.getLastRow() < 2) return null;
+  const rows = sh.getRange(2, 1, sh.getLastRow() - 1, SCOL.UPDATED).getValues();
+  for (let i = rows.length - 1; i >= 0; i--) { // dòng mới nhất thắng nếu lỡ trùng
+    const r = rows[i];
+    if (cellToIso_(r[SCOL.WEEK - 1]) !== week || String(r[SCOL.NAME - 1]).trim() !== name) continue;
+    const days = [];
+    for (let k = 0; k < 7; k++) days.push(String(r[SCOL.DAY0 - 1 + k]).trim() !== '');
+    const upd = r[SCOL.UPDATED - 1];
+    return {
+      row: i + 2, days: days,
+      updatedAt: upd instanceof Date ? formatDT_(upd) : String(upd || ''),
+    };
+  }
+  return null;
+}
+
+function registerSchedule_(body) {
+  const name = String(body.name || '').trim();
+  const week = String(body.week || '').trim();
+  const days = body.days;
+  if (!name || getMembers_().indexOf(name) === -1)
+    return { status: 'error', message: 'Tên không có trong danh sách thành viên.' };
+  if (!Array.isArray(days) || days.length !== 7)
+    return { status: 'error', message: 'Dữ liệu ngày không hợp lệ, tải lại trang.' };
+
+  const target = nextWeekMonday_();
+  if (week !== target) {
+    logSchedule_(name, week, days, 'TỪ CHỐI: tuần ' + week + ' ≠ ' + target);
+    if (ISO_RE.test(week) && week < target)
+      return { status: 'error', message: 'Tuần ' + isoToDM_(week) + ' đã khóa (đã sang Thứ 2). ' +
+        'Tải lại trang để đăng ký tuần ' + isoToDM_(target) + ', hoặc nhờ quản lý điểm danh.' };
+    return { status: 'error', message: 'Tuần không hợp lệ — tải lại trang rồi đăng ký lại.' };
+  }
+
+  const bools = days.map(function (v) { return v === true; });
+  const values = [target, name].concat(bools.map(function (v) { return v ? '✓' : ''; })).concat([new Date()]);
+  const sh = getScheduleSheet_();
+  const found = findScheduleRow_(target, name);
+  if (found) sh.getRange(found.row, 1, 1, values.length).setValues([values]);
+  else sh.appendRow(values);
+  SpreadsheetApp.flush();
+
+  // Đọc lại để chắc chắn đã ghi — trả về đúng cái đang nằm trong Sheet
+  const saved = findScheduleRow_(target, name);
+  const ok = !!saved && saved.days.join() === bools.join();
+  logSchedule_(name, target, bools, ok ? 'OK' : 'LỖI: đọc lại không khớp');
+  if (!ok) return { status: 'error', message: 'Lưu chưa thành công, thử lại.' };
+
+  const picked = DAY_LABELS.filter(function (_, i) { return bools[i]; });
+  return {
+    status: 'success',
+    week: target, days: saved.days, updatedAt: saved.updatedAt,
+    message: 'Đã lưu lịch tuần ' + isoToDM_(target) + ': ' +
+      (picked.length ? picked.join(', ') : 'không đi buổi nào') + '.',
+  };
+}
+
+/* ============================================================
+ * ĐIỂM DANH
+ * ============================================================ */
+
+function getCheckinSheet_() {
+  const ss = SpreadsheetApp.getActive();
+  let sh = ss.getSheetByName(CONFIG.CHECKIN_SHEET);
+  if (!sh) {
+    sh = ss.insertSheet(CONFIG.CHECKIN_SHEET);
+    const headers = ['Ngày', 'Tên', 'Giờ đến', 'Cập nhật lúc'];
+    sh.getRange(1, 1, 1, headers.length).setValues([headers]);
+    styleHeader_(sh.getRange(1, 1, 1, headers.length));
+    sh.setFrozenRows(1);
+    sh.getRange('A:A').setNumberFormat('@');
+    sh.getRange('C:C').setNumberFormat('@');
+    sh.setColumnWidth(KCOL.NAME, 150);
+  }
+  return sh;
+}
+
+function saveCheckin_(body) {
+  const name = String(body.name || '').trim();
+  const date = String(body.date || '').trim();
+  let time = String(body.time || '').trim();
+  if (!name) return { status: 'error', message: 'Thiếu tên.' };
+  if (!ISO_RE.test(date)) return { status: 'error', message: 'Ngày không hợp lệ.' };
+  if (time === 'now') {
+    if (date !== todayVN_()) return { status: 'error', message: '"Bây giờ" chỉ dùng cho hôm nay — nhập giờ tay.' };
+    time = nowHHmmVN_();
+  }
+  if (time && hhmmToMin_(time) === null) return { status: 'error', message: 'Giờ không hợp lệ.' };
+
+  const sh = getCheckinSheet_();
+  let row = 0;
+  if (sh.getLastRow() >= 2) {
+    const rows = sh.getRange(2, 1, sh.getLastRow() - 1, 2).getValues();
+    for (let i = 0; i < rows.length; i++)
+      if (cellToIso_(rows[i][0]) === date && String(rows[i][1]).trim() === name) { row = i + 2; break; }
+  }
+  if (!time) { // bỏ trống giờ = xoá điểm danh
+    if (row) sh.deleteRow(row);
+    return { status: 'success', message: 'Đã xoá điểm danh của ' + name + '.' };
+  }
+  const values = [[date, name, time, new Date()]];
+  if (row) sh.getRange(row, 1, 1, 4).setValues(values);
+  else sh.appendRow(values[0]);
+  return { status: 'success', message: 'Đã điểm danh ' + name + ' lúc ' + time + '.' };
+}
+
+function getRollcall_(date) {
+  const map = {};
+  const get = function (nm) {
+    if (!map[nm]) map[nm] = { name: nm, registered: false, off: false, expected: '', checkin: '' };
+    return map[nm];
+  };
+
+  // 1. Lịch tuần chứa ngày đó
+  const week = mondayOf_(date), idx = weekdayIdx_(date);
+  const ssh = getScheduleSheet_();
+  if (ssh.getLastRow() >= 2) {
+    ssh.getRange(2, 1, ssh.getLastRow() - 1, SCOL.UPDATED).getValues().forEach(function (r) {
+      if (cellToIso_(r[SCOL.WEEK - 1]) !== week) return;
+      const nm = String(r[SCOL.NAME - 1]).trim();
+      if (!nm) return;
+      // dòng sau ghi đè dòng trước (lỡ trùng)
+      const on = String(r[SCOL.DAY0 - 1 + idx]).trim() !== '';
+      if (on) get(nm).registered = true; else if (map[nm]) map[nm].registered = false;
+    });
+  }
+
+  // 2. Đơn trễ/nghỉ cho ngày đó (bỏ đơn bị từ chối)
+  const p = date.split('-');
+  const msh = SpreadsheetApp.getActive().getSheetByName(p[1] + '/' + p[0]);
+  if (msh && msh.getLastRow() >= 2) {
+    msh.getRange(2, 1, msh.getLastRow() - 1, COL.STATUS).getValues().forEach(function (r) {
+      if (!(r[COL.DATE - 1] instanceof Date) || cellToIso_(r[COL.DATE - 1]) !== date) return;
+      if (String(r[COL.STATUS - 1]).trim() === 'Từ chối') return;
+      const nm = String(r[COL.NAME - 1]).trim();
+      const type = String(r[COL.TYPE - 1]).trim();
+      if (type === 'Nghỉ') get(nm).off = true;
+      else if (type === 'Đi trễ') get(nm).expected = formatArrival_(r[COL.ARRIVAL - 1]);
+    });
+  }
+
+  // 3. Điểm danh
+  const ksh = getCheckinSheet_();
+  if (ksh.getLastRow() >= 2) {
+    ksh.getRange(2, 1, ksh.getLastRow() - 1, 3).getValues().forEach(function (r) {
+      if (cellToIso_(r[KCOL.DATE - 1]) !== date) return;
+      get(String(r[KCOL.NAME - 1]).trim()).checkin = formatArrival_(r[KCOL.TIME - 1]);
+    });
+  }
+
+  const startMin = CONFIG.PRACTICE_START_HOUR * 60 + CONFIG.PRACTICE_START_MIN;
+  const today = todayVN_();
+  const list = Object.keys(map).map(function (k) {
+    const it = map[k];
+    const arr = hhmmToMin_(it.checkin);
+    if (arr !== null) {
+      if (!it.registered && !it.expected && !it.off) it.result = 'walkin';
+      else if (arr <= startMin) it.result = 'ontime';
+      else if (it.expected) it.result = arr <= (hhmmToMin_(it.expected) || startMin) ? 'late_ok' : 'late_over';
+      else it.result = 'late';
+    } else if (it.off) it.result = 'off_ok';
+    else if (date < today || (date === today && hhmmToMin_(nowHHmmVN_()) > startMin + 60)) it.result = 'absent';
+    else it.result = 'pending';
+    return it;
+  });
+  const order = getMembers_();
+  list.sort(function (a, b) {
+    const ia = order.indexOf(a.name), ib = order.indexOf(b.name);
+    return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib) || a.name.localeCompare(b.name);
+  });
+  return list;
+}
+
+/* ============================================================
  * DATA HELPERS
  * ============================================================ */
 
@@ -189,11 +493,11 @@ function getMembers_() {
 function isDuplicate_(sheet, name, type, appliedDate) {
   if (sheet.getLastRow() < 2) return false;
   const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, COL.STATUS).getValues();
-  const target = ymd_(appliedDate);
+  const target = cellToIso_(appliedDate);
   return rows.some(function (r) {
     return String(r[COL.NAME - 1]).trim() === name &&
       String(r[COL.TYPE - 1]).trim() === type &&
-      r[COL.DATE - 1] instanceof Date && ymd_(r[COL.DATE - 1]) === target &&
+      r[COL.DATE - 1] instanceof Date && cellToIso_(r[COL.DATE - 1]) === target &&
       String(r[COL.STATUS - 1]).trim() !== 'Từ chối';
   });
 }
@@ -357,7 +661,6 @@ function jsonResponse(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
 function pad2_(n) { return ('0' + n).slice(-2); }
-function ymd_(d) { return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
 function formatD_(d) { return Utilities.formatDate(d, CONFIG.TIMEZONE, 'dd/MM/yyyy'); }
 function formatDT_(d) { return Utilities.formatDate(d, CONFIG.TIMEZONE, 'dd/MM/yyyy HH:mm'); }
 function formatArrival_(v) {
@@ -377,6 +680,9 @@ function setup() {
   getOrCreateMonthSheet_(monthSheetName_(new Date()));
   setupMembersSheet_(ss);
   setupSummarySheet_(ss);
+  getScheduleSheet_();
+  getScheduleLogSheet_();
+  getCheckinSheet_();
 
   const def = ss.getSheetByName('Sheet1') || ss.getSheetByName('Trang tính1');
   if (def && ss.getSheets().length > 3) { try { ss.deleteSheet(def); } catch (e) {} }

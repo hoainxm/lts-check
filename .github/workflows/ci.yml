@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Frontend ↔ Code.gs đủ action
+        run: node scripts/check-actions.mjs
+      - name: Test backend (giờ VN)
+        run: TZ=Asia/Ho_Chi_Minh node --test tests/backend.test.cjs
+      - name: Test backend (project lệch múi giờ)
+        run: |
+          TZ=America/Los_Angeles node --test tests/backend.test.cjs
+          TZ=Pacific/Kiritimati node --test tests/backend.test.cjs
