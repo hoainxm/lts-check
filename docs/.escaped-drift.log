@@ -1,0 +1,2 @@
+2026-09-28 | DEPLOY.md + apps-script/Code.gs | DEPLOY bảo dán repo Code.gs, nhưng repo Code.gs thiếu action schedule/registerSchedule/rollcall/checkin mà backend đang chạy có → source backend thật không nằm trong repo | hook: grep mọi action index.html gửi đi, fail nếu Code.gs không có nhánh xử lý tương ứng
+2026-09-28 | DEPLOY.md | Không nêu sheet Lịch tuần/Log lịch/Điểm danh và không cảnh báo repo phải là nguồn duy nhất → prod bị deploy bản thiếu action lúc 12:16–14:06 | hook: CI so danh sách action giữa index.html và Code.gs
