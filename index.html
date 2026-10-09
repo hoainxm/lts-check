@@ -11,6 +11,9 @@
     <link rel="apple-touch-icon" href="lts-logo.jpg" />
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <!-- Mở sẵn kết nối tới API (Apps Script trả 302 sang googleusercontent) -> bấm Lưu nhanh hơn -->
+    <link rel="preconnect" href="https://script.google.com" />
+    <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
@@ -840,7 +843,7 @@
         clearTimeout(toastTimer);
         toastTimer = setTimeout(
           () => toast.classList.add("opacity-0", "translate-y-4"),
-          3000,
+          ok ? 3000 : 6000, // lỗi thường dài, cần thời gian đọc
         );
       }
 
@@ -1500,19 +1503,30 @@
         const btn = $("schedSubmit");
         btn.disabled = true;
         $("schedSubmitText").textContent = "Đang lưu…";
-        try {
+        const payload = JSON.stringify({
+          action: "registerSchedule",
+          name: name,
+          week: SCHED_WEEK || isoOf(nextMonday()),
+          days: days,
+          client: clientInfo(),
+        });
+        const send = async () => {
           const res = await fetch(API_URL, {
             method: "POST",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({
-              action: "registerSchedule",
-              name: name,
-              week: SCHED_WEEK || isoOf(nextMonday()),
-              days: days,
-              client: clientInfo(),
-            }),
+            body: payload,
           });
-          const data = await res.json();
+          return res.json();
+        };
+        try {
+          let data;
+          // Mạng chập chờn (hay gặp trong Messenger/Zalo): tự gửi lại 1 lần — lưu lịch ghi đè nên gửi 2 lần vẫn an toàn
+          try {
+            data = await send();
+          } catch (e) {
+            $("schedSubmitText").textContent = "Mạng chậm, đang thử lại…";
+            data = await send();
+          }
           showToast(
             data.message || (data.status === "success" ? "Đã lưu." : "Lỗi."),
             data.status === "success",

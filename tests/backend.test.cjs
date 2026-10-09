@@ -29,6 +29,12 @@ class Sheet {
       if ((this.d[i] || []).some((c) => c !== undefined && c !== "")) return i + 1;
     return 0;
   }
+  // Như Sheets thật: tới dòng/cột cuối CÓ dữ liệu (có thể hẹp hơn 36 cột)
+  getDataRange() {
+    let lc = 1;
+    this.d.forEach((row) => (row || []).forEach((c, j) => { if (c !== undefined && c !== "") lc = Math.max(lc, j + 1); }));
+    return this.getRange(1, 1, Math.max(this.getLastRow(), 1), lc);
+  }
   getMaxRows() { return 1000; }
   getMaxColumns() { return 40; }
   getLastColumn() { return 40; }
@@ -95,7 +101,8 @@ function load(members) {
       }),
       BorderStyle: {}, BandingTheme: {},
     },
-    Utilities: { formatDate: fmt },
+    Utilities: { formatDate: fmt, sleep() {} },
+    console: { log() {}, warn() {}, error() {} },
     PropertiesService: { getScriptProperties: () => ({
       getProperty: (k) => props[k] || null, setProperty: (k, v) => (props[k] = v), deleteProperty: (k) => delete props[k],
     }) },
@@ -378,4 +385,64 @@ test("Nhật ký: ghi trước / web hiện / gửi / đã lưu + thiết bị +
   assert.match(last[5], /^iOS · Messenger\/Facebook/);
   assert.strictEqual(last[6], "mở 20:55 27/09 / tải lịch 20:58 27/09");
   assert.strictEqual(s.sheets["Nhật ký"].d[0].length, 7, "header 7 cột");
+});
+
+// Sheet thật ném lỗi này khi Google từ chối ghi (VD tài khoản chủ Sheet hết dung lượng) — đọc vẫn được
+const DENIED = "Bạn không có quyền truy cập vào tài liệu yêu cầu.";
+function failWrites(sh, times) {
+  const gr = sh.getRange.bind(sh);
+  let left = times;
+  sh.getRange = (...a) => {
+    const r = gr(...a);
+    return new Proxy(r, { get: (t, k) => (k === "setValues" && left-- > 0 ? () => { throw new Error(DENIED); } : t[k]) });
+  };
+}
+
+test("Lỗi ghi tạm thời: tự thử lại 1 lần -> lưu thành công", () => {
+  const s = load(MEMBERS);
+  s.at("2026-10-09T21:00:00+07:00");
+  s.post({ action: "registerSchedule", name: "Ebi", week: "2026-10-12", days: [true, false, false, false, false, false, false] });
+  failWrites(s.sheets["Tháng 10/2026"], 1);
+  const r = s.post({ action: "registerSchedule", name: "Ebi", week: "2026-10-12", days: [false, true, false, false, false, false, false] });
+  assert.strictEqual(r.status, "success", r.message);
+  assert.deepStrictEqual(s.get({ action: "schedule", name: "Ebi" }).days, [false, true, false, false, false, false, false]);
+});
+
+test("Google từ chối ghi liên tục: báo rõ CHƯA lưu (code SHEET_DENIED), không báo 'Đã lưu', Nhật ký ghi lỗi gốc", () => {
+  const s = load(MEMBERS);
+  s.at("2026-10-09T21:00:00+07:00");
+  s.post({ action: "registerSchedule", name: "Ebi", week: "2026-10-12", days: [true, false, false, false, false, false, false] });
+  failWrites(s.sheets["Tháng 10/2026"], 99);
+  const r = s.post({ action: "registerSchedule", name: "Ebi", week: "2026-10-12", days: [false, true, false, false, false, false, false] });
+  assert.strictEqual(r.status, "error");
+  assert.strictEqual(r.code, "SHEET_DENIED");
+  assert.match(r.message, /CHƯA lưu/);
+  assert.deepStrictEqual(s.get({ action: "schedule", name: "Ebi" }).days, [true, false, false, false, false, false, false], "lịch cũ giữ nguyên");
+  assert.match(logs(s).at(-1)[4], /SHEET_DENIED|từ chối ghi/);
+});
+
+test("Lỗi khác (không phải lỗi tạm thời) -> không thử lại, báo Lỗi server", () => {
+  const s = load(MEMBERS);
+  s.at("2026-10-09T21:00:00+07:00");
+  s.post({ action: "registerSchedule", name: "Ebi", week: "2026-10-12", days: [true, false, false, false, false, false, false] });
+  const sh = s.sheets["Tháng 10/2026"];
+  let calls = 0;
+  const gr = sh.getRange.bind(sh);
+  sh.getRange = (...a) => new Proxy(gr(...a), { get: (t, k) => (k === "setValues" ? () => { calls++; throw new Error("boom"); } : t[k]) });
+  const r = s.post({ action: "registerSchedule", name: "Ebi", week: "2026-10-12", days: [false, true, false, false, false, false, false] });
+  assert.strictEqual(r.status, "error");
+  assert.match(r.message, /^Lỗi server: boom/);
+  assert.strictEqual(calls, 1);
+});
+
+test("Đơn trễ/nghỉ: tên không có trong Members bị từ chối; tên NFD vẫn khớp đúng dòng", () => {
+  const s = load(MEMBERS);
+  s.at("2026-10-09T12:00:00+07:00");
+  const bad = s.post({ action: "request", name: "Người Lạ", type: "Nghỉ", date: "2026-10-12", reason: "x" });
+  assert.strictEqual(bad.status, "error");
+  assert.match(bad.message, /không có trong danh sách/);
+  const ok = s.post({ action: "request", name: "Yến Thư".normalize("NFD"), type: "Nghỉ", date: "2026-10-12", reason: "ốm" });
+  assert.strictEqual(ok.status, "success", ok.message);
+  const sh = s.sheets["Tháng 10/2026"];
+  assert.strictEqual(sh.d.filter((r) => r && String(r[0]).normalize("NFC") === "Yến Thư").length, 1, "không tạo dòng trùng");
 });
