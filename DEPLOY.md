@@ -85,3 +85,13 @@ User gửi ──► Sheet tháng "MM/YYYY" (Chờ duyệt)
 - Đổi hình nền (admin): tab Thống kê → ô 🎨 (ảnh hiển thị theo cột mobile).
 - Đổi API URL: sửa `API_URL` đầu `index.html` rồi up lại.
 - Sheet `Data` cũ (nếu có từ bản trước) không dùng nữa — có thể xoá tay.
+
+## Xử lý sự cố
+
+- **"Google Sheet đang từ chối ghi dữ liệu"** (lỗi gốc: *Bạn không có quyền truy cập vào tài liệu yêu cầu* /
+  *You do not have permission to access the requested document*): web vẫn ĐỌC được (danh sách, lịch) nhưng mọi lần
+  GHI đều lỗi. Nguyên nhân hay gặp nhất: **tài khoản chủ Sheet hết dung lượng Google** (Drive + Gmail + Photos) → Google
+  khoá sửa mọi file của tài khoản đó, kể cả script. Kiểm tra: đăng nhập tài khoản chủ Sheet → https://one.google.com/storage;
+  hoặc thử gõ tay 1 ô trong Sheet. Giải phóng dung lượng (dọn Thùng rác Drive/Gmail) → hết lỗi, không cần deploy lại.
+  Chi tiết lỗi từng lần: Apps Script → **Executions** (code ghi `console.error` kể cả khi không ghi được sheet Nhật ký).
+- Server tự thử lại 1 lần với lỗi Sheet tạm thời; web tự gửi lại 1 lần khi rớt mạng (lưu lịch là ghi đè nên an toàn).
